@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { collection, addDoc, deleteDoc, doc, getDocs, onSnapshot, orderBy, query, updateDoc, where } from "firebase/firestore";
 import { db, auth } from "../firebase";
 import { useTheme } from "../theme";
+import { apiUrl } from "../apiBase";
 
 const DEFAULT_MEALS = ["Breakfast", "Lunch", "Dinner", "Snacks"];
 
@@ -122,7 +123,7 @@ export default function SavedMeals({ user, todayLabels = [] }) {
     setEditSaving(true);
     try {
       const token = await auth.currentUser.getIdToken();
-      const res = await fetch(`/api/saved-meal/${editingMeal.id}`, {
+      const res = await fetch(apiUrl(`/api/saved-meal/${editingMeal.id}`), {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ name: trimmed, foods: stripRates(editFoods) }),

@@ -9,11 +9,6 @@ export default function AboutKhaaya({ onClose }) {
 
   const features = [
     {
-      icon: "🇮🇳",
-      title: "Not US data. Indian data.",
-      desc: "Most apps use US nutrition databases. Khaaya uses Indian government nutrition data, the most comprehensive database of Indian foods.",
-    },
-    {
       icon: "⚡",
       title: "Log meals instantly",
       desc: "Type what you ate in any language. Khaaya figures out the calories and macros for you.",
@@ -26,7 +21,7 @@ export default function AboutKhaaya({ onClose }) {
     {
       icon: "🍛",
       title: "Roti isn't bread. Dal isn't soup.",
-      desc: "Real Indian nutrition data so what you log actually matches what you eat.",
+      desc: "Backed by Indian government nutrition data, not estimates based on food equivalence, so what you log actually matches what you eat.",
     },
   ];
 
@@ -180,7 +175,7 @@ export default function AboutKhaaya({ onClose }) {
           textAlign: "center", fontSize: 12, color: T.textSec,
           padding: "8px 0 0",
         }}>
-          Khaaya v3.0 · Made with ❤️ for Indian food
+          Khaaya v1.0
         </div>
       </div>
     </div>

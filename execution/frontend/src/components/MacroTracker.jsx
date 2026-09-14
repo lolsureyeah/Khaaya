@@ -7,6 +7,7 @@ import History from "./History";
 import SavedMeals from "./SavedMeals";
 import { calcGoals } from "../utils/calculations";
 import { useTheme } from "../theme";
+import { apiUrl } from "../apiBase";
 
 const DEFAULT_MEALS = ["Breakfast", "Lunch", "Dinner", "Snacks"];
 
@@ -68,7 +69,7 @@ useEffect(() => {
     setLocalMsg("");
     try {
       const token = await auth.currentUser.getIdToken();
-      const res = await fetch("/api/parse-food", { method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` }, body: JSON.stringify({ text: foodInput }) });
+      const res = await fetch(apiUrl("/api/parse-food"), { method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` }, body: JSON.stringify({ text: foodInput }) });
       const data = await res.json();
       const items = data.items || [];
       if (!items.length) { setLocalMsg("Couldn't recognise that food. Try again!"); setParsing(false); return; }
@@ -132,7 +133,7 @@ useEffect(() => {
       items.forEach(m => { newTotals.cal += m.cal; newTotals.protein += m.protein; newTotals.carbs += m.carbs; newTotals.fat += m.fat; });
 
       const coachToken = await auth.currentUser.getIdToken();
-      const cr = await fetch("/api/coach", { method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${coachToken}` }, body: JSON.stringify({ meals: items, totals: newTotals, goals, stats }) });
+      const cr = await fetch(apiUrl("/api/coach"), { method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${coachToken}` }, body: JSON.stringify({ meals: items, totals: newTotals, goals, stats }) });
       const cd = await cr.json();
       onCharUpdate(cd.comment || "Great fuel!", Math.min(100, (newTotals.cal / goals.cal) * 100));
     } catch (e) {

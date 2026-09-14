@@ -7,12 +7,6 @@ import { useTheme } from "../theme";
 export default function MicroEducation({ onDismiss }) {
   const { T } = useTheme();
 
-  const points = [
-    { icon: "🌍", text: "Most apps use US food data" },
-    { icon: "🇮🇳", text: "Khaaya uses Indian nutrition data from NIN" },
-    { icon: "🍛", text: "That means better estimates for roti, dal, sabzi, etc." },
-  ];
-
   return (
     <div
       onClick={onDismiss}
@@ -41,58 +35,22 @@ export default function MicroEducation({ onDismiss }) {
 
         {/* Accent badge */}
         <div style={{
-          width: 56, height: 56, borderRadius: 16,
-          background: "linear-gradient(135deg, rgba(52,199,89,0.18), rgba(0,122,255,0.14))",
+          width: 36, height: 36, borderRadius: 12,
+          background: T.inputBg,
           display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 28, margin: "8px auto 16px",
+          fontSize: 17, margin: "8px auto 18px",
+          opacity: 0.7,
         }}>
           ✅
         </div>
 
-        {/* Title */}
+        {/* Message */}
         <div style={{
-          textAlign: "center", fontSize: 21, fontWeight: 800,
-          color: T.text, letterSpacing: -0.3, marginBottom: 4,
+          textAlign: "center", fontSize: 16, color: T.text,
+          fontWeight: 500, lineHeight: 1.55,
+          marginBottom: 28, padding: "0 4px",
         }}>
-          Why this is more accurate
-        </div>
-
-        {/* Subtitle */}
-        <div style={{
-          textAlign: "center", fontSize: 13, color: T.textSec,
-          marginBottom: 24, fontWeight: 500,
-        }}>
-          Your first meal was just logged 🎉
-        </div>
-
-        {/* Points */}
-        <div style={{
-          background: T.card, borderRadius: 18, overflow: "hidden",
-          border: `1px solid ${T.border}`,
-          marginBottom: 28,
-        }}>
-          {points.map((p, i) => (
-            <div
-              key={i}
-              style={{
-                display: "flex", alignItems: "center", gap: 14,
-                padding: "16px 18px",
-                borderTop: i > 0 ? `1px solid ${T.divider}` : "none",
-              }}
-            >
-              <span style={{
-                fontSize: 22, flexShrink: 0,
-                width: 40, height: 40, borderRadius: 12,
-                background: T.inputBg,
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}>
-                {p.icon}
-              </span>
-              <span style={{ fontSize: 15, color: T.text, fontWeight: 600, lineHeight: 1.4 }}>
-                {p.text}
-              </span>
-            </div>
-          ))}
+          Khaaya uses Indian nutrition data from NIN instead of US food databases, so estimates for roti, dal, sabzi and other Indian meals are more accurate.
         </div>
 
         {/* CTA */}

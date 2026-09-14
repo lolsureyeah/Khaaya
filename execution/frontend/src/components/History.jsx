@@ -7,6 +7,7 @@ import { db, auth } from "../firebase";
 import NINInfo from "./NINInfo";
 import MacroBar from "./MacroBar";
 import { useTheme } from "../theme";
+import { apiUrl } from "../apiBase";
 
 function Toast({ msg }) {
   if (!msg) return null;
@@ -146,7 +147,7 @@ export default function History({ user, goals }) {
     setParsing(true);
     try {
       const token = await auth.currentUser.getIdToken();
-      const res = await fetch("/api/parse-food", {
+      const res = await fetch(apiUrl("/api/parse-food"), {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
         body: JSON.stringify({ text: editText }),
@@ -171,7 +172,7 @@ export default function History({ user, goals }) {
     setSaveMealSaving(true);
     try {
       const token = await auth.currentUser.getIdToken();
-      const res = await fetch("/api/save-meal", {
+      const res = await fetch(apiUrl("/api/save-meal"), {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ name: trimmedName, foods: allFoods }),

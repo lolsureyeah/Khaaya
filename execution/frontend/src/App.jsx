@@ -7,6 +7,7 @@ import { doc, getDoc, setDoc, deleteDoc } from "firebase/firestore";
 import { auth, db } from "./firebase";
 import { ThemeContext, light, dark } from "./theme";
 import { calcGoals } from "./utils/calculations";
+import { apiUrl } from "./apiBase";
 
 import Login            from "./components/Login";
 import Onboarding       from "./components/Onboarding";
@@ -49,7 +50,7 @@ export default function App() {
     setAiGoals(null); // Show 'Calculating...' state immediately
     try {
       const token = await auth.currentUser.getIdToken();
-      const res = await fetch("/api/calculate-goals", {
+      const res = await fetch(apiUrl("/api/calculate-goals"), {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
         body: JSON.stringify({
