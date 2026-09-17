@@ -17,6 +17,7 @@ import MacroTracker  from "./components/MacroTracker";
 import WeightTracker from "./components/WeightTracker";
 import Settings      from "./components/Settings";
 import AboutKhaaya   from "./components/AboutKhaaya";
+import LegalDocs      from "./components/LegalDocs";
 
 const TABS = ["Log", "Weight"];
 
@@ -291,10 +292,14 @@ export default function App() {
             onLogout={handleLogout}
             onDeleteAccount={handleDeleteAccount}
             onClose={() => setScreen("app")}
+            onOpenLegal={() => setScreen("legal")}
           />
         )}
         {screen === "about" && (
           <AboutKhaaya onClose={() => setScreen("app")} />
+        )}
+        {screen === "legal" && (
+          <LegalDocs onClose={() => setScreen("app")} />
         )}
       </>
     </ThemeContext.Provider>

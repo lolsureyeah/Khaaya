@@ -58,6 +58,11 @@ export default function SavedMeals({ user, todayLabels = [] }) {
   const [toast,      setToast]      = useState("");
   const [expanded,   setExpanded]   = useState(new Set());
 
+  // Quick-repeat yesterday's meals
+  const [yesterdayMeals,   setYesterdayMeals]   = useState([]);
+  const [yesterdayLoading, setYesterdayLoading] = useState(true);
+  const [loggingAgain,     setLoggingAgain]     = useState(null); // label being re-logged
+
   // Edit modal state
   const [editingMeal, setEditingMeal] = useState(null); // meal object being edited
   const [editName,    setEditName]    = useState("");
@@ -84,6 +89,53 @@ export default function SavedMeals({ user, todayLabels = [] }) {
       setLoading(false);
     });
     return unsub;
+  }, [user]);
+
+  // Fetch yesterday's logged meals, grouped by the standard meal types
+  useEffect(() => {
+    if (!user) { setYesterdayLoading(false); return; }
+    (async () => {
+      try {
+        const now = new Date();
+        const y = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+        y.setDate(y.getDate() - 1);
+        const yDate = y.toISOString().split("T")[0];
+
+        const q = query(
+          collection(db, "users", user.uid, "food_logs"),
+          where("date", "==", yDate)
+        );
+        const snap = await getDocs(q);
+
+        const byType = new Map();
+        snap.forEach(d => {
+          const data = d.data();
+          const rawLabel = (data.label || "").trim();
+          const match = DEFAULT_MEALS.find(m => m.toLowerCase() === rawLabel.toLowerCase());
+          if (!match) return;
+          const existing = byType.get(match) || { label: match, items: [] };
+          existing.items = [...existing.items, ...(data.items || [])];
+          byType.set(match, existing);
+        });
+
+        const list = Array.from(byType.values())
+          .map(m => ({
+            label:        m.label,
+            items:        m.items,
+            totalCal:     m.items.reduce((s, i) => s + (i.cal     || 0), 0),
+            totalProtein: m.items.reduce((s, i) => s + (i.protein || 0), 0),
+            totalCarbs:   m.items.reduce((s, i) => s + (i.carbs   || 0), 0),
+            totalFat:     m.items.reduce((s, i) => s + (i.fat     || 0), 0),
+          }))
+          .sort((a, b) => DEFAULT_MEALS.indexOf(a.label) - DEFAULT_MEALS.indexOf(b.label));
+
+        setYesterdayMeals(list);
+      } catch (e) {
+        console.error("fetch yesterday meals failed:", e.message);
+      } finally {
+        setYesterdayLoading(false);
+      }
+    })();
   }, [user]);
 
   const openEdit = (meal) => {
@@ -196,6 +248,51 @@ export default function SavedMeals({ user, todayLabels = [] }) {
     }
   };
 
+  const handleLogAgain = async (meal) => {
+    if (!user || loggingAgain) return;
+    setLoggingAgain(meal.label);
+    try {
+      const now = new Date();
+      const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+        .toISOString().split("T")[0];
+
+      const q = query(
+        collection(db, "users", user.uid, "food_logs"),
+        where("date", "==", localDate)
+      );
+      const snap = await getDocs(q);
+      const existing = snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .find(e => (e.label || "").trim().toLowerCase() === meal.label.toLowerCase());
+
+      if (existing) {
+        const mergedItems = [...(existing.items || []), ...meal.items];
+        await updateDoc(doc(db, "users", user.uid, "food_logs", existing.id), {
+          items:   mergedItems,
+          cal:     mergedItems.reduce((s, i) => s + (i.cal || 0), 0),
+          time:    now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          isoTime: now.toISOString(),
+        });
+      } else {
+        await addDoc(collection(db, "users", user.uid, "food_logs"), {
+          label:   meal.label,
+          items:   meal.items,
+          date:    localDate,
+          time:    now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          isoTime: now.toISOString(),
+          cal:     meal.totalCal,
+        });
+      }
+
+      showToast(`"${meal.label}" logged again`);
+    } catch (e) {
+      console.error("log again failed:", e.message);
+      showToast("Failed to log meal.");
+    } finally {
+      setLoggingAgain(null);
+    }
+  };
+
   const handleDelete = async (meal) => {
     if (!user || deleting) return;
     setDeleting(meal.id);
@@ -221,8 +318,8 @@ export default function SavedMeals({ user, todayLabels = [] }) {
     fat:     acc.fat     + (f.fat     || 0),
   }), { cal: 0, protein: 0, carbs: 0, fat: 0 });
 
-  if (loading) return null;
-  if (meals.length === 0) return (
+  if (loading || yesterdayLoading) return null;
+  if (meals.length === 0 && yesterdayMeals.length === 0) return (
     <div style={card}>
       <span style={labelS}>Saved Meals</span>
       <div style={{ fontSize: 13, color: T.textSec, lineHeight: 1.55, padding: "4px 0 2px" }}>
@@ -339,6 +436,36 @@ export default function SavedMeals({ user, todayLabels = [] }) {
       {/* ── Saved meals list ──────────────────────────────────────────── */}
       <div style={card}>
         <span style={labelS}>Saved Meals</span>
+
+        {/* Quick-repeat yesterday's meals */}
+        {yesterdayMeals.map((meal) => (
+          <div key={`yesterday-${meal.label}`} style={{
+            display: "flex", alignItems: "center", gap: 10,
+            padding: "10px 0", borderBottom: `1px solid ${T.divider}`,
+          }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 600, fontSize: 14, color: T.text, marginBottom: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                Yesterday's {meal.label}
+              </div>
+              <div style={{ fontSize: 12, color: T.textSec }}>
+                <span style={{ color: T.accent, fontWeight: 600 }}>{Math.round(meal.totalCal)} kcal</span>
+                {" · "}P:{Math.round(meal.totalProtein)}g · C:{Math.round(meal.totalCarbs)}g · F:{Math.round(meal.totalFat)}g
+              </div>
+            </div>
+            <button
+              onClick={() => handleLogAgain(meal)}
+              disabled={loggingAgain === meal.label}
+              style={{
+                background: T.accent, color: "#fff", border: "none",
+                borderRadius: 8, padding: "5px 12px",
+                fontWeight: 600, fontSize: 13, cursor: "pointer",
+                opacity: loggingAgain === meal.label ? 0.6 : 1, flexShrink: 0,
+              }}>
+              {loggingAgain === meal.label ? "Logging..." : "+ Log Again"}
+            </button>
+          </div>
+        ))}
+
         {meals.map((meal) => {
           const isOpen = expanded.has(meal.id);
           const toggleExpand = () => setExpanded(prev => {

@@ -18,12 +18,17 @@ import { geminiKeyedUrl, rotateGeminiKey } from "./geminiKeyRotator.js";
 
 // Load Firebase service account from file if provided, else fall back to applicationDefault
 let credential;
-try {
-  const saPath = join(__dirname, "serviceAccount.json");
-  const sa = require(saPath);
+if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+  const sa = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
   credential = admin.credential.cert(sa);
-} catch {
-  credential = admin.credential.applicationDefault();
+} else {
+  try {
+    const saPath = join(__dirname, "serviceAccount.json");
+    const sa = require(saPath);
+    credential = admin.credential.cert(sa);
+  } catch {
+    credential = admin.credential.applicationDefault();
+  }
 }
 admin.initializeApp({ credential });
 const adminDb = admin.firestore();

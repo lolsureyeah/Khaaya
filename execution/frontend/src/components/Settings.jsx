@@ -13,6 +13,7 @@ export default function Settings({
   onLogout,
   onDeleteAccount,
   onClose,
+  onOpenLegal,
 }) {
   const { T } = useTheme();
   const [deleteState, setDeleteState] = useState("idle"); // idle | confirm | deleting | error
@@ -150,6 +151,15 @@ export default function Settings({
             <span style={S.rowLabel}>Version</span>
             <span style={S.rowValue}>3.0</span>
           </div>
+        </div>
+
+        {/* Legal */}
+        <div style={S.section}>
+          <div style={S.sectionLabel}>Legal</div>
+          <button style={{ ...S.rowFirst, width: "100%", background: "none", border: "none", cursor: "pointer", textAlign: "left" }} onClick={onOpenLegal}>
+            <span style={S.rowLabel}>Terms, Privacy & AI Disclaimer</span>
+            <span style={S.rowValue}>›</span>
+          </button>
         </div>
 
         {/* Sign Out */}

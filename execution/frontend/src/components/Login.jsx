@@ -5,6 +5,7 @@ import { useState } from "react";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "../firebase";
 import { useTheme } from "../theme";
+import LegalDocs from "./LegalDocs";
 
 export default function Login() {
   const { T, isDark, toggle } = useTheme();
@@ -13,6 +14,7 @@ export default function Login() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [error,    setError]    = useState("");
   const [loading,  setLoading]  = useState(false);
+  const [legalDoc, setLegalDoc] = useState(null); // null | "disclaimer" | "terms" | "privacy"
 
   const handleEmail = async () => {
     if (!email || !password) { setError("Enter email and password."); return; }
@@ -188,7 +190,29 @@ export default function Login() {
             {isSignUp ? "Sign in" : "Create account"}
           </span>
         </div>
+
+        {isSignUp && (
+          <div style={{ textAlign: "center", marginTop: 16, fontSize: 12, color: T.textSec, lineHeight: 1.6 }}>
+            By creating an account, you agree to our{" "}
+            <span style={{ color: T.accent, cursor: "pointer", fontWeight: 600 }} onClick={() => setLegalDoc("terms")}>
+              Terms of Use
+            </span>
+            ,{" "}
+            <span style={{ color: T.accent, cursor: "pointer", fontWeight: 600 }} onClick={() => setLegalDoc("privacy")}>
+              Privacy Policy
+            </span>
+            , and{" "}
+            <span style={{ color: T.accent, cursor: "pointer", fontWeight: 600 }} onClick={() => setLegalDoc("disclaimer")}>
+              AI Disclaimer
+            </span>
+            .
+          </div>
+        )}
       </div>
+
+      {legalDoc && (
+        <LegalDocs initialDoc={legalDoc} onClose={() => setLegalDoc(null)} />
+      )}
     </div>
   );
 }
