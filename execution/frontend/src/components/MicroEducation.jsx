@@ -50,7 +50,7 @@ export default function MicroEducation({ onDismiss }) {
           fontWeight: 500, lineHeight: 1.55,
           marginBottom: 28, padding: "0 4px",
         }}>
-          Khaaya uses Indian nutrition data from NIN instead of US food databases, so estimates for roti, dal, sabzi and other Indian meals are more accurate.
+          Khaaya draws on nutrition data from India's National Institute of Nutrition (NIN) rather than Western food databases, resulting in more accurate estimates for roti, dal, sabzi and other Indian dishes.
         </div>
 
         {/* CTA */}
