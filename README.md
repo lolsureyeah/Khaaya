@@ -1,62 +1,72 @@
-# LogYourMeal
-## South Asian Nutrition Tracker — Anti-Gravity Project
+# Khaaya
+## South Asian Nutrition Tracker
 
 ---
 
 ## WHAT THIS IS
-LogYourMeal is a nutrition tracker for South Asian users with:
-- Multilingual food logging (Hindi, Urdu, Bengali, Punjabi, Tamil, Telugu, English)
-- AI-powered food parser (Claude API) — understands "chaar roti, ek katori moong daal"
-- Human SVG character reflecting your actual body fat % (sex-aware: male + female ranges)
+Khaaya is a nutrition tracker built around South Asian food and eating patterns:
+- AI-powered food parser (Gemini 2.0 Flash Lite) — understands natural language meal descriptions in any language
+- NIN (National Institute of Nutrition) verified food database for Indian food accuracy, with community-cached AI estimates as fallback
+- Voice input for meal logging
+- Quick-repeat: re-log yesterday's meals by type in one tap
+- AI Coach — conversational, generates a Workout Day and Rest Day meal plan (with pre/post-workout meals) based on user goals, preferences and today's logged intake
 - Weight + measurements tracker with charts
 - Firebase Auth (email + Google) + Firestore persistence
+- Onboarding wizard shown only on first login
 
 ---
 
 ## PREREQUISITES
 - Node.js LTS (nodejs.org)
 - Git (git-scm.com)
-- Firebase project (console.firebase.google.com)
-- Anthropic API key (console.anthropic.com)
+- Firebase project (console.firebase.google.com) — project ID: fuelos-ee85d
+- Gemini API keys (aistudio.google.com) — 3 keys for rotation
 
 ---
 
 ## STEP 1 — CLONE / OPEN
 
-If starting fresh in Anti-Gravity:
-1. Open Anti-Gravity
-2. File → Open Folder → select this logyourmeal-antigravity folder
-3. Anti-Gravity reads claude.md automatically
+```bash
+git clone https://github.com/lolsureyeah/Khaaya.git
+cd Khaaya
+```
 
 ---
 
 ## STEP 2 — SET UP ENVIRONMENT VARIABLES
 
-**Frontend** — copy .env.template to .env:
-```bash
-cd execution/frontend
-copy .env.template .env
+**Frontend** — `execution/frontend/.env`:
 ```
-Open .env and fill in your Firebase values from:
-Firebase Console → Project Settings → Your Apps → Web App → Config
+VITE_FIREBASE_API_KEY=...
+VITE_FIREBASE_AUTH_DOMAIN=...
+VITE_FIREBASE_PROJECT_ID=fuelos-ee85d
+VITE_FIREBASE_STORAGE_BUCKET=...
+VITE_FIREBASE_MESSAGING_SENDER_ID=...
+VITE_FIREBASE_APP_ID=...
+VITE_API_URL=http://localhost:3001   # points to live backend URL in production
+```
 
-**Backend** — copy .env.template to .env:
-```bash
-cd execution/backend
-copy .env.template .env
+**Backend** — `execution/backend/.env`:
 ```
-Open .env and add your Anthropic API key.
+GEMINI_API_KEY_1=...
+GEMINI_API_KEY_2=...
+GEMINI_API_KEY_3=...
+PORT=3001
+```
+
+For local dev, `execution/backend/serviceAccount.json` (Firebase Admin SDK key) is loaded directly.
+For production, set `FIREBASE_SERVICE_ACCOUNT` as an environment variable containing the full JSON contents — the backend checks this env var first and falls back to the local file.
+
+Neither `.env` nor `serviceAccount.json` should ever be committed.
 
 ---
 
 ## STEP 3 — INSTALL DEPENDENCIES
 
 ```bash
-# Frontend
 cd execution/frontend
 npm install
 
-# Backend
 cd ../backend
 npm install
 ```
@@ -64,8 +74,6 @@ npm install
 ---
 
 ## STEP 4 — RUN LOCALLY
-
-Open two terminals:
 
 **Terminal 1 (backend):**
 ```bash
@@ -85,87 +93,65 @@ Open http://localhost:5173 in your browser.
 
 ---
 
-## STEP 5 — RUN TESTS
+## STEP 5 — DEPLOY BACKEND (Render)
 
-Follow tests/test_plan.md — execute all 10 tests in order.
-All must pass before deploying.
+1. render.com → New Web Service → connect `lolsureyeah/Khaaya`
+2. Root Directory: `execution/backend`
+3. Build Command: `npm install`
+4. Start Command: `npm start`
+5. Instance Type: Free
+6. Environment Variables: `GEMINI_API_KEY_1/2/3`, `FIREBASE_SERVICE_ACCOUNT` (full JSON as one value)
+7. Deploy — copy the live URL (e.g. `khaaya-backend.onrender.com`)
+
+Note: Render free tier spins down after 15 min inactivity, ~30-50s cold start on next request. Fine for pre-launch, upgrade before real launch traffic.
 
 ---
 
-## STEP 6 — DEPLOY TO FIREBASE HOSTING
+## STEP 6 — DEPLOY FRONTEND (Firebase Hosting)
 
-Follow mcp/firebase_mcp_config.md exactly.
+Update `execution/frontend/.env`:
+```
+VITE_API_URL=https://khaaya-backend.onrender.com
+```
 
-Quick summary:
 ```bash
-# Login to Firebase
-npx firebase-tools login --no-localhost
-
-# Set project
-npx firebase-tools use YOUR_PROJECT_ID
-
-# Build frontend
 cd execution/frontend
 npm run build
 
-# Init hosting (first time only)
 cd ../..
-npx firebase-tools init hosting
-# Public dir: execution/frontend/dist
-# Single-page app: Yes
-
-# Deploy
+npx firebase-tools login --no-localhost
+npx firebase-tools use fuelos-ee85d
 npx firebase-tools deploy --only hosting
 ```
 
-Your app will be live at: https://YOUR_PROJECT_ID.web.app
+Live at: https://fuelos-ee85d.web.app
 
-After deploy, add your-project.web.app to:
+After deploy, add `fuelos-ee85d.web.app` to:
 Firebase Console → Authentication → Settings → Authorized domains
 
----
-
-## BODY FAT % VISUAL SYSTEM
-
-The character's body shape changes based on BF% and sex:
-
-**Male ranges:**
-| BF% | Category | Character |
-|-----|----------|-----------|
-| 2–5% | Essential | Extremely lean, sharp definition |
-| 6–13% | Athlete | Lean, abs visible when fueled |
-| 14–17% | Fitness | Toned, slight waist |
-| 18–24% | Average | Normal build |
-| 25–29% | Overweight | Visible belly bulge |
-| 30%+ | Obese | Wide torso, large belly |
-
-**Female ranges:**
-| BF% | Category | Character |
-|-----|----------|-----------|
-| 10–13% | Essential | Very lean, narrow |
-| 14–20% | Athlete | Athletic, visible curves |
-| 21–24% | Fitness | Fit, hourglass shape |
-| 25–31% | Average | Normal female silhouette |
-| 32–37% | Overweight | Fuller torso + hips |
-| 38%+ | Obese | Wide silhouette |
+Also confirm backend CORS in `execution/backend/index.js` includes this exact domain.
 
 ---
 
 ## PROJECT STRUCTURE
 
 ```
-logyourmeal-antigravity/
-├── claude.md                    ← Anti-Gravity agent instruction (3-layer)
-├── README.md                    ← This file
-├── directives/README.md         ← File destination map
-├── orchestration/plan.md        ← Task list + phases
+Khaaya/
+├── README.md
 ├── execution/
-│   ├── frontend/                ← React + Vite app
-│   └── backend/                 ← Express API proxy
-├── mcp/firebase_mcp_config.md   ← Firebase deploy guide
-├── brand/reference_image.txt    ← UI design reference
-└── tests/test_plan.md           ← Live test assertions
+│   ├── frontend/          ← React + Vite app
+│   └── backend/           ← Express API (Gemini parsing, AI Coach, auth middleware)
 ```
+
+---
+
+## SECURITY CHECKLIST (done pre-launch)
+- Rate limiting on `/api/parse-food`, `/api/coach`, `/api/calculate-goals`
+- CORS locked to production frontend domain
+- Firestore rules restrict read/write to each user's own `uid`
+- `requireAuth` middleware on all `/api/` routes
+- No secrets committed to git
+- npm audit — high/critical vulnerabilities resolved
 
 ---
 
@@ -173,8 +159,10 @@ logyourmeal-antigravity/
 
 | Problem | Solution |
 |---------|----------|
-| White text invisible | Add styles.css fix from tests/test_plan.md Bug #1 |
-| Food parsing empty | Check backend is running + ANTHROPIC_API_KEY is set |
-| Firebase auth fails | Check .env VITE_FIREBASE_* values are correct |
+| Food parsing empty / errors | Check backend is running + `GEMINI_API_KEY_1/2/3` are set |
+| Firebase auth fails | Check `.env` `VITE_FIREBASE_*` values are correct |
 | Google Sign-In blocked | Add domain to Firebase Auth → Authorized Domains |
-| Deploy blank page | Check firebase.json public path = execution/frontend/dist |
+| Deploy blank page | Check `firebase.json` public path = `execution/frontend/dist` |
+| Backend crashes on deploy — "No Gemini API keys found" | Env vars not set on hosting platform (Render/Railway) — add them in dashboard |
+| Backend crashes — Firebase Admin init fails | Confirm `FIREBASE_SERVICE_ACCOUNT` env var is set with full JSON, or `serviceAccount.json` exists locally |
+| Vite proxy ECONNRESET | Backend not running or wrong port — check `vite.config.js` proxy target matches backend `PORT` |
