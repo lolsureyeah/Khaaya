@@ -149,7 +149,7 @@ export default function Settings({
           </div>
           <div style={S.row}>
             <span style={S.rowLabel}>Version</span>
-            <span style={S.rowValue}>3.0</span>
+            <span style={S.rowValue}>1.0</span>
           </div>
         </div>
 

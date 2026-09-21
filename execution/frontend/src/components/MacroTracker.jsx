@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { collection, addDoc, doc, updateDoc, onSnapshot, query, where, getDocs } from "firebase/firestore";
 import { db, auth } from "../firebase";
 import NINInfo from "./NINInfo";
@@ -10,6 +10,8 @@ import { useTheme } from "../theme";
 import { apiUrl } from "../apiBase";
 
 const DEFAULT_MEALS = ["Breakfast", "Lunch", "Dinner", "Snacks"];
+
+const SpeechRecognitionAPI = typeof window !== "undefined" ? (window.SpeechRecognition || window.webkitSpeechRecognition) : null;
 
 function buildSuggestions(todayLabels) {
   const seen = new Set();
@@ -38,6 +40,8 @@ export default function MacroTracker({ user, stats, onCharUpdate, goals: propGoa
   const [toast, setToast] = useState(null);
   const [showEdu, setShowEdu] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [listening, setListening] = useState(false);
+  const recognitionRef = useRef(null);
 
   const todayKeyStr = toDateKey(new Date());
   const targetKeyStr = toDateKey(selectedDate);
@@ -72,6 +76,47 @@ useEffect(() => {
     });
     return unsub;
   }, [user]);
+
+  const toggleListening = () => {
+    if (!SpeechRecognitionAPI) return;
+
+    if (listening) {
+      recognitionRef.current?.stop();
+      return;
+    }
+
+    const recognition = new SpeechRecognitionAPI();
+    recognition.lang = navigator.language || "en-IN";
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    recognition.onresult = (event) => {
+      let finalText = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) finalText += event.results[i][0].transcript;
+      }
+      if (finalText.trim()) {
+        setFoodInput(prev => (prev.trim() ? `${prev.trim()} ${finalText.trim()}` : finalText.trim()));
+      }
+    };
+
+    recognition.onerror = (event) => {
+      if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+        setLocalMsg("Microphone permission denied.");
+      } else if (event.error !== "no-speech" && event.error !== "aborted") {
+        setLocalMsg("Couldn't hear that — try again.");
+      }
+    };
+
+    recognition.onend = () => setListening(false);
+
+    recognitionRef.current = recognition;
+    setListening(true);
+    setLocalMsg("");
+    recognition.start();
+  };
+
+  useEffect(() => () => recognitionRef.current?.stop(), []);
 
   const handleLog = async () => {
     if (!foodInput.trim() || isFutureDate) return;
@@ -220,14 +265,40 @@ useEffect(() => {
             }}>{s}</button>
           ))}
         </div>
-        <textarea
-          style={{ ...inputS, height: 80, resize: "none" }}
-          value={foodInput}
-          onChange={e => setFoodInput(e.target.value)}
-          placeholder="e.g. 2 eggs, 1 toast, chai"
-          disabled={isFutureDate}
-        />
-        <div style={{ fontSize: 12, color: T.textSec, marginBottom: 12 }}>Powered by AI · Log meals in any language</div>
+        <div style={{ position: "relative" }}>
+          <textarea
+            style={{ ...inputS, height: 80, resize: "none", paddingRight: SpeechRecognitionAPI ? 48 : undefined }}
+            value={foodInput}
+            onChange={e => setFoodInput(e.target.value)}
+            placeholder="e.g. 2 eggs, 1 toast, chai"
+            disabled={isFutureDate}
+          />
+          {SpeechRecognitionAPI && (
+            <button
+              type="button"
+              onClick={toggleListening}
+              disabled={isFutureDate}
+              title={listening ? "Stop recording" : "Speak your meal"}
+              style={{
+                position: "absolute", top: 10, right: 10,
+                width: 32, height: 32, borderRadius: "50%",
+                background: listening ? "#FF3B30" : T.accent,
+                border: "none", cursor: isFutureDate ? "default" : "pointer",
+                opacity: isFutureDate ? 0.5 : 1,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                animation: listening ? "pulseMic 1.2s ease-in-out infinite" : "none",
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z" fill="#fff" />
+                <path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.93V20H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-2.07A7 7 0 0 0 19 11Z" fill="#fff" />
+              </svg>
+            </button>
+          )}
+        </div>
+        <div style={{ fontSize: 12, color: T.textSec, marginBottom: 12 }}>
+          {SpeechRecognitionAPI ? "Powered by AI · Type or tap the mic to log meals in any language" : "Powered by AI · Log meals in any language"}
+        </div>
         {localMsg && <div style={{ fontSize: 13, color: "#FF3B30", marginBottom: 10 }}>{localMsg}</div>}
         <button
           style={{ width: "100%", background: T.btnPrimary, color: T.card, border: "none", borderRadius: 14, padding: 16, fontWeight: 700, fontSize: 17, cursor: "pointer", opacity: parsing || isFutureDate ? 0.5 : 1 }}
@@ -250,7 +321,7 @@ useEffect(() => {
           {toast}
         </div>
       )}
-      <style>{`@keyframes slideUp { from { opacity: 0; transform: translateX(-50%) translateY(12px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }`}</style>
+      <style>{`@keyframes slideUp { from { opacity: 0; transform: translateX(-50%) translateY(12px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } } @keyframes pulseMic { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,59,48,0.5); } 50% { box-shadow: 0 0 0 8px rgba(255,59,48,0); } }`}</style>
     </div>
   );
 }
