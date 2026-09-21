@@ -162,12 +162,27 @@ export default function History({ user, goals, selectedDate, onSelectDate }) {
       const data = await res.json();
       const items = data.items || [];
       if (!items.length) { setParsing(false); return; }
-      await deleteDoc(doc(db, "users", user.uid, "food_logs", entry.id));
       const rawLabel = (editLabel || entry.label || "Meal").trim();
       const newLabel = rawLabel.charAt(0).toUpperCase() + rawLabel.slice(1);
-      const newEntry = { ...entry, label: newLabel, items, cal: items.reduce((s, i) => s + (i.cal || 0), 0), isoTime: new Date().toISOString() };
-      delete newEntry.id;
-      await addDoc(collection(db, "users", user.uid, "food_logs"), newEntry);
+      const normalizedNew = newLabel.toLowerCase();
+
+      // If renaming to a name that matches another meal already logged today, merge into it instead of duplicating
+      const mergeTarget = dayMeals.find(e => e.id !== entry.id && (e.label || "").trim().toLowerCase() === normalizedNew);
+
+      if (mergeTarget) {
+        const mergedItems = [...(mergeTarget.items || []), ...items];
+        await updateDoc(doc(db, "users", user.uid, "food_logs", mergeTarget.id), {
+          items: mergedItems,
+          cal: mergedItems.reduce((s, i) => s + (i.cal || 0), 0),
+          isoTime: new Date().toISOString(),
+        });
+        await deleteDoc(doc(db, "users", user.uid, "food_logs", entry.id));
+      } else {
+        await deleteDoc(doc(db, "users", user.uid, "food_logs", entry.id));
+        const newEntry = { ...entry, label: newLabel, items, cal: items.reduce((s, i) => s + (i.cal || 0), 0), isoTime: new Date().toISOString() };
+        delete newEntry.id;
+        await addDoc(collection(db, "users", user.uid, "food_logs"), newEntry);
+      }
       setEditingId(null); setEditText(""); setEditLabel("");
     } catch (e) { console.error("Edit failed", e); }
     setParsing(false);
