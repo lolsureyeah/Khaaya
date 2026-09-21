@@ -119,7 +119,7 @@ useEffect(() => {
   useEffect(() => () => recognitionRef.current?.stop(), []);
 
   const handleLog = async () => {
-    if (!foodInput.trim() || isFutureDate) return;
+    if (!mealName.trim() || !foodInput.trim() || isFutureDate) return;
     setParsing(true);
     setLocalMsg("");
     try {
@@ -301,9 +301,9 @@ useEffect(() => {
         </div>
         {localMsg && <div style={{ fontSize: 13, color: "#FF3B30", marginBottom: 10 }}>{localMsg}</div>}
         <button
-          style={{ width: "100%", background: T.btnPrimary, color: T.card, border: "none", borderRadius: 14, padding: 16, fontWeight: 700, fontSize: 17, cursor: "pointer", opacity: parsing || isFutureDate ? 0.5 : 1 }}
+          style={{ width: "100%", background: T.btnPrimary, color: T.card, border: "none", borderRadius: 14, padding: 16, fontWeight: 700, fontSize: 17, cursor: "pointer", opacity: parsing || isFutureDate || !mealName.trim() ? 0.5 : 1 }}
           onClick={handleLog}
-          disabled={parsing || isFutureDate}
+          disabled={parsing || isFutureDate || !mealName.trim()}
         >
           {parsing ? "LOGGING..." : "LOG IT"}
         </button>
