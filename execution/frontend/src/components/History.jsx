@@ -42,6 +42,12 @@ function toDateKey(d) {
   return new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split("T")[0];
 }
 
+// Avoid a redundant "(Ng)" suffix when the original phrase already states the weight (e.g. "200g Poha")
+function formatItem(it) {
+  if (it.originalQty && !/\d\s*g\b/i.test(it.originalQty)) return `${it.originalQty} (${it.grams}g)`;
+  return it.originalQty || `${it.grams}g ${it.name}`;
+}
+
 export default function History({ user, goals, selectedDate, onSelectDate }) {
   const { T } = useTheme();
   const [mealLog,      setMealLog]      = useState([]);
@@ -55,6 +61,7 @@ export default function History({ user, goals, selectedDate, onSelectDate }) {
   // Rich meal log state (today and past dates)
   const [calExpanded,  setCalExpanded]  = useState(false);
   const [editingId,    setEditingId]    = useState(null);
+  const [editLabel,    setEditLabel]    = useState("");
   const [editText,     setEditText]     = useState("");
   const [expandedItem, setExpandedItem] = useState(null);
   const [showNINInfo,  setShowNINInfo]  = useState(false);
@@ -156,10 +163,12 @@ export default function History({ user, goals, selectedDate, onSelectDate }) {
       const items = data.items || [];
       if (!items.length) { setParsing(false); return; }
       await deleteDoc(doc(db, "users", user.uid, "food_logs", entry.id));
-      const newEntry = { ...entry, items, cal: items.reduce((s, i) => s + (i.cal || 0), 0), isoTime: new Date().toISOString() };
+      const rawLabel = (editLabel || entry.label || "Meal").trim();
+      const newLabel = rawLabel.charAt(0).toUpperCase() + rawLabel.slice(1);
+      const newEntry = { ...entry, label: newLabel, items, cal: items.reduce((s, i) => s + (i.cal || 0), 0), isoTime: new Date().toISOString() };
       delete newEntry.id;
       await addDoc(collection(db, "users", user.uid, "food_logs"), newEntry);
-      setEditingId(null); setEditText("");
+      setEditingId(null); setEditText(""); setEditLabel("");
     } catch (e) { console.error("Edit failed", e); }
     setParsing(false);
   };
@@ -268,7 +277,7 @@ export default function History({ user, goals, selectedDate, onSelectDate }) {
               </div>
               {dayMeals.flatMap(e => e.items || []).map((it, i) => (
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: T.textSec, padding: "3px 0" }}>
-                  <span>{it.grams}g {it.name}</span>
+                  <span>{formatItem(it)}</span>
                   <span style={{ fontWeight: 600, color: T.text }}>{Math.round(it.cal)} kcal</span>
                 </div>
               ))}
@@ -423,7 +432,11 @@ export default function History({ user, goals, selectedDate, onSelectDate }) {
                 <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
                   <span style={{ fontSize: 12, color: T.textSec }}>{entry.time}</span>
                   {canEdit && entry.id && <>
-                    <button onClick={() => { setEditingId(entry.id); setEditText((entry.items || []).map(it => `${it.grams}g ${it.name}`).join(", ")); }}
+                    <button onClick={() => {
+                      setEditingId(entry.id);
+                      setEditLabel(entry.label || "");
+                      setEditText((entry.items || []).map(it => it.originalQty || `${it.grams}g ${it.name}`).join(", "));
+                    }}
                       style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14 }}>✏️</button>
                     <button onClick={() => handleDelete(entry)}
                       style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14 }}>🗑️</button>
@@ -434,12 +447,13 @@ export default function History({ user, goals, selectedDate, onSelectDate }) {
               {/* Edit form (today only) */}
               {editingId === entry.id ? (
                 <div style={{ background: T.inputBg, padding: 12, borderRadius: 12, marginBottom: 10 }}>
+                  <input style={{ ...inputS, marginBottom: 8 }} value={editLabel} onChange={e => setEditLabel(e.target.value)} placeholder="Meal name" />
                   <textarea style={{ ...inputS, height: 60, marginBottom: 8 }} value={editText} onChange={e => setEditText(e.target.value)} />
                   <div style={{ display: "flex", gap: 8 }}>
                     <button style={{ flex: 1, background: T.accent, color: "#fff", border: "none", borderRadius: 8, padding: 8, fontWeight: 600 }}
                       onClick={() => handleEditSave(entry)} disabled={parsing}>{parsing ? "Saving..." : "Save"}</button>
                     <button style={{ flex: 1, background: T.border, color: T.textSec, border: "none", borderRadius: 8, padding: 8, fontWeight: 600 }}
-                      onClick={() => setEditingId(null)}>Cancel</button>
+                      onClick={() => { setEditingId(null); setEditLabel(""); }}>Cancel</button>
                   </div>
                 </div>
               ) : (
@@ -452,7 +466,7 @@ export default function History({ user, goals, selectedDate, onSelectDate }) {
                       <div key={i} style={{ marginTop: 4 }}>
                         <div onClick={() => setExpandedItem(isOpen ? null : itemKey)}
                           style={{ display: "flex", justifyContent: "space-between", fontSize: 14, cursor: "pointer", userSelect: "none" }}>
-                          <span style={{ color: T.textSec }}>{it.grams}g {it.name}</span>
+                          <span style={{ color: T.textSec }}>{formatItem(it)}</span>
                           <span style={{ fontWeight: 600, color: T.text }}>{Math.round(it.cal)} kcal</span>
                         </div>
                         {isOpen && (
