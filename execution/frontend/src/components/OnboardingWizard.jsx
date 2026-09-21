@@ -9,7 +9,7 @@ import { calcGoals } from "../utils/calculations";
 const FEATURE_CARDS = [
   {
     icon: "🤖",
-    title: "AI Meal Logging",
+    title: "Auto Meal Logging",
     desc: "Just type what you ate in plain English. Our AI figures out the rest.",
   },
   {

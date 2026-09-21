@@ -6,6 +6,22 @@ import { apiUrl } from "../apiBase";
 
 const DEFAULT_MEALS = ["Breakfast", "Lunch", "Dinner", "Snacks"];
 
+function toDateKey(d) {
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().split("T")[0];
+}
+
+// Shift a YYYY-MM-DD key by whole days. Anchored at local noon so a DST change
+// can't bump the result onto the wrong calendar day.
+function addDays(dateKey, delta) {
+  const d = new Date(`${dateKey}T12:00:00`);
+  d.setDate(d.getDate() + delta);
+  return toDateKey(d);
+}
+
+function formatDay(dateKey) {
+  return new Date(`${dateKey}T12:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+}
+
 function buildSuggestions(todayLabels) {
   const seen = new Set();
   const result = [];
@@ -47,7 +63,7 @@ function stripRates(foods) {
   return foods.map(({ _calPer, _proteinPer, _carbsPer, _fatPer, ...rest }) => rest);
 }
 
-export default function SavedMeals({ user, todayLabels = [] }) {
+export default function SavedMeals({ user, todayLabels = [], selectedDate }) {
   const { T } = useTheme();
   const [meals,      setMeals]      = useState([]);
   const [loading,    setLoading]    = useState(true);
@@ -58,10 +74,17 @@ export default function SavedMeals({ user, todayLabels = [] }) {
   const [toast,      setToast]      = useState("");
   const [expanded,   setExpanded]   = useState(new Set());
 
-  // Quick-repeat yesterday's meals
-  const [yesterdayMeals,   setYesterdayMeals]   = useState([]);
-  const [yesterdayLoading, setYesterdayLoading] = useState(true);
-  const [loggingAgain,     setLoggingAgain]     = useState(null); // label being re-logged
+  // Quick-repeat: the meals logged on the day before whichever day is selected
+  const [prevMeals,      setPrevMeals]      = useState([]);
+  const [prevLoading,    setPrevLoading]    = useState(true);
+  const [repeatOpen,     setRepeatOpen]     = useState(false);
+  const [repeatPicked,   setRepeatPicked]   = useState(new Set()); // labels ticked for re-logging
+  const [repeatLogging,  setRepeatLogging]  = useState(false);
+
+  const todayKey  = toDateKey(new Date());
+  const selKey    = toDateKey(selectedDate || new Date());
+  const prevKey   = addDays(selKey, -1);
+  const isFutureSel = selKey > todayKey;
 
   // Edit modal state
   const [editingMeal, setEditingMeal] = useState(null); // meal object being edited
@@ -91,52 +114,53 @@ export default function SavedMeals({ user, todayLabels = [] }) {
     return unsub;
   }, [user]);
 
-  // Fetch yesterday's logged meals, grouped by the standard meal types
+  // Live-subscribe to the meals logged the day before the selected day, grouped by the
+  // standard meal types. onSnapshot (not a one-time getDocs) so a meal backdated via the
+  // calendar shows up here immediately, without requiring a page reload.
   useEffect(() => {
-    if (!user) { setYesterdayLoading(false); return; }
-    (async () => {
-      try {
-        const now = new Date();
-        const y = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
-        y.setDate(y.getDate() - 1);
-        const yDate = y.toISOString().split("T")[0];
+    if (!user || isFutureSel) { setPrevMeals([]); setPrevLoading(false); return; }
 
-        const q = query(
-          collection(db, "users", user.uid, "food_logs"),
-          where("date", "==", yDate)
-        );
-        const snap = await getDocs(q);
+    const q = query(
+      collection(db, "users", user.uid, "food_logs"),
+      where("date", "==", prevKey)
+    );
+    const unsub = onSnapshot(q, (snap) => {
+      const byType = new Map();
+      snap.forEach(d => {
+        const data = d.data();
+        const rawLabel = (data.label || "").trim();
+        const match = DEFAULT_MEALS.find(m => m.toLowerCase() === rawLabel.toLowerCase());
+        if (!match) return;
+        const existing = byType.get(match) || { label: match, items: [] };
+        existing.items = [...existing.items, ...(data.items || [])];
+        byType.set(match, existing);
+      });
 
-        const byType = new Map();
-        snap.forEach(d => {
-          const data = d.data();
-          const rawLabel = (data.label || "").trim();
-          const match = DEFAULT_MEALS.find(m => m.toLowerCase() === rawLabel.toLowerCase());
-          if (!match) return;
-          const existing = byType.get(match) || { label: match, items: [] };
-          existing.items = [...existing.items, ...(data.items || [])];
-          byType.set(match, existing);
-        });
+      const list = Array.from(byType.values())
+        .map(m => ({
+          label:        m.label,
+          items:        m.items,
+          totalCal:     m.items.reduce((s, i) => s + (i.cal     || 0), 0),
+          totalProtein: m.items.reduce((s, i) => s + (i.protein || 0), 0),
+          totalCarbs:   m.items.reduce((s, i) => s + (i.carbs   || 0), 0),
+          totalFat:     m.items.reduce((s, i) => s + (i.fat     || 0), 0),
+        }))
+        .sort((a, b) => DEFAULT_MEALS.indexOf(a.label) - DEFAULT_MEALS.indexOf(b.label));
 
-        const list = Array.from(byType.values())
-          .map(m => ({
-            label:        m.label,
-            items:        m.items,
-            totalCal:     m.items.reduce((s, i) => s + (i.cal     || 0), 0),
-            totalProtein: m.items.reduce((s, i) => s + (i.protein || 0), 0),
-            totalCarbs:   m.items.reduce((s, i) => s + (i.carbs   || 0), 0),
-            totalFat:     m.items.reduce((s, i) => s + (i.fat     || 0), 0),
-          }))
-          .sort((a, b) => DEFAULT_MEALS.indexOf(a.label) - DEFAULT_MEALS.indexOf(b.label));
+      setPrevMeals(list);
+      setPrevLoading(false);
+    }, (err) => {
+      console.error("previous-day meals listener failed:", err.message);
+      setPrevLoading(false);
+    });
+    return unsub;
+  }, [user, prevKey, isFutureSel]);
 
-        setYesterdayMeals(list);
-      } catch (e) {
-        console.error("fetch yesterday meals failed:", e.message);
-      } finally {
-        setYesterdayLoading(false);
-      }
-    })();
-  }, [user]);
+  // Collapse the picker and drop any ticked meals when the day changes
+  useEffect(() => {
+    setRepeatOpen(false);
+    setRepeatPicked(new Set());
+  }, [prevKey]);
 
   const openEdit = (meal) => {
     setEditingMeal(meal);
@@ -203,10 +227,9 @@ export default function SavedMeals({ user, todayLabels = [] }) {
     setLogging(true);
     try {
       const now = new Date();
-      const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
-        .toISOString().split("T")[0];
+      const localDate = selKey;
 
-      // Check if a food_log entry with the same label already exists today
+      // Check if a food_log entry with the same label already exists on the target day
       const q = query(
         collection(db, "users", user.uid, "food_logs"),
         where("date", "==", localDate)
@@ -248,48 +271,64 @@ export default function SavedMeals({ user, todayLabels = [] }) {
     }
   };
 
-  const handleLogAgain = async (meal) => {
-    if (!user || loggingAgain) return;
-    setLoggingAgain(meal.label);
+  const toggleRepeatPick = (label) => setRepeatPicked(prev => {
+    const next = new Set(prev);
+    next.has(label) ? next.delete(label) : next.add(label);
+    return next;
+  });
+
+  // Copy the ticked meals from the previous day onto the selected day
+  const handleRepeatSelected = async () => {
+    if (!user || repeatLogging || repeatPicked.size === 0) return;
+    const chosen = prevMeals.filter(m => repeatPicked.has(m.label));
+    if (!chosen.length) return;
+    setRepeatLogging(true);
     try {
       const now = new Date();
-      const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
-        .toISOString().split("T")[0];
-
       const q = query(
         collection(db, "users", user.uid, "food_logs"),
-        where("date", "==", localDate)
+        where("date", "==", selKey)
       );
       const snap = await getDocs(q);
-      const existing = snap.docs
-        .map(d => ({ id: d.id, ...d.data() }))
-        .find(e => (e.label || "").trim().toLowerCase() === meal.label.toLowerCase());
+      const existingByLabel = new Map(
+        snap.docs.map(d => {
+          const data = d.data();
+          return [(data.label || "").trim().toLowerCase(), { id: d.id, ...data }];
+        })
+      );
 
-      if (existing) {
-        const mergedItems = [...(existing.items || []), ...meal.items];
-        await updateDoc(doc(db, "users", user.uid, "food_logs", existing.id), {
-          items:   mergedItems,
-          cal:     mergedItems.reduce((s, i) => s + (i.cal || 0), 0),
-          time:    now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-          isoTime: now.toISOString(),
-        });
-      } else {
-        await addDoc(collection(db, "users", user.uid, "food_logs"), {
-          label:   meal.label,
-          items:   meal.items,
-          date:    localDate,
-          time:    now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-          isoTime: now.toISOString(),
-          cal:     meal.totalCal,
-        });
+      for (const meal of chosen) {
+        const existing = existingByLabel.get(meal.label.toLowerCase());
+        if (existing) {
+          const mergedItems = [...(existing.items || []), ...meal.items];
+          await updateDoc(doc(db, "users", user.uid, "food_logs", existing.id), {
+            items:   mergedItems,
+            cal:     mergedItems.reduce((s, i) => s + (i.cal || 0), 0),
+            time:    now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            isoTime: now.toISOString(),
+          });
+        } else {
+          await addDoc(collection(db, "users", user.uid, "food_logs"), {
+            label:   meal.label,
+            items:   meal.items,
+            date:    selKey,
+            time:    now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            isoTime: now.toISOString(),
+            cal:     meal.totalCal,
+          });
+        }
       }
 
-      showToast(`"${meal.label}" logged again`);
+      setRepeatPicked(new Set());
+      setRepeatOpen(false);
+      showToast(chosen.length === 1
+        ? `"${chosen[0].label}" logged`
+        : `${chosen.length} meals logged`);
     } catch (e) {
-      console.error("log again failed:", e.message);
-      showToast("Failed to log meal.");
+      console.error("repeat meals failed:", e.message);
+      showToast("Failed to log meals.");
     } finally {
-      setLoggingAgain(null);
+      setRepeatLogging(false);
     }
   };
 
@@ -318,8 +357,13 @@ export default function SavedMeals({ user, todayLabels = [] }) {
     fat:     acc.fat     + (f.fat     || 0),
   }), { cal: 0, protein: 0, carbs: 0, fat: 0 });
 
-  if (loading || yesterdayLoading) return null;
-  if (meals.length === 0 && yesterdayMeals.length === 0) return (
+  const repeatTotalCal = prevMeals.reduce((s, m) => s + m.totalCal, 0);
+  const repeatHeading = selKey === todayKey
+    ? "Repeat yesterday's meals"
+    : `Repeat meals from ${formatDay(prevKey)}`;
+
+  if (loading || prevLoading) return null;
+  if (meals.length === 0 && prevMeals.length === 0) return (
     <div style={card}>
       <span style={labelS}>Saved Meals</span>
       <div style={{ fontSize: 13, color: T.textSec, lineHeight: 1.55, padding: "4px 0 2px" }}>
@@ -437,34 +481,76 @@ export default function SavedMeals({ user, todayLabels = [] }) {
       <div style={card}>
         <span style={labelS}>Saved Meals</span>
 
-        {/* Quick-repeat yesterday's meals */}
-        {yesterdayMeals.map((meal) => (
-          <div key={`yesterday-${meal.label}`} style={{
-            display: "flex", alignItems: "center", gap: 10,
-            padding: "10px 0", borderBottom: `1px solid ${T.divider}`,
-          }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 600, fontSize: 14, color: T.text, marginBottom: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                Yesterday's {meal.label}
-              </div>
-              <div style={{ fontSize: 12, color: T.textSec }}>
-                <span style={{ color: T.accent, fontWeight: 600 }}>{Math.round(meal.totalCal)} kcal</span>
-                {" · "}P:{Math.round(meal.totalProtein)}g · C:{Math.round(meal.totalCarbs)}g · F:{Math.round(meal.totalFat)}g
+        {/* Quick-repeat — one collapsed row that expands into a meal picker */}
+        {prevMeals.length > 0 && (
+          <div style={{ borderBottom: `1px solid ${T.divider}` }}>
+            <div
+              onClick={() => setRepeatOpen(o => !o)}
+              style={{
+                display: "flex", alignItems: "center", gap: 10,
+                padding: "10px 0", cursor: "pointer", userSelect: "none",
+              }}>
+              <span style={{ fontSize: 11, color: T.textSec, flexShrink: 0, transition: "transform 0.2s", display: "inline-block", transform: repeatOpen ? "rotate(90deg)" : "rotate(0deg)" }}>▶</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 600, fontSize: 14, color: T.text, marginBottom: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {repeatHeading}
+                </div>
+                <div style={{ fontSize: 12, color: T.textSec }}>
+                  {prevMeals.length} meal{prevMeals.length > 1 ? "s" : ""}
+                  {" · "}<span style={{ color: T.accent, fontWeight: 600 }}>{Math.round(repeatTotalCal)} kcal</span>
+                </div>
               </div>
             </div>
-            <button
-              onClick={() => handleLogAgain(meal)}
-              disabled={loggingAgain === meal.label}
-              style={{
-                background: T.accent, color: "#fff", border: "none",
-                borderRadius: 8, padding: "5px 12px",
-                fontWeight: 600, fontSize: 13, cursor: "pointer",
-                opacity: loggingAgain === meal.label ? 0.6 : 1, flexShrink: 0,
-              }}>
-              {loggingAgain === meal.label ? "Logging..." : "+ Log Again"}
-            </button>
+
+            {repeatOpen && (
+              <div style={{ paddingLeft: 20, paddingBottom: 12 }}>
+                {prevMeals.map((meal) => {
+                  const picked = repeatPicked.has(meal.label);
+                  return (
+                    <div
+                      key={`prev-${meal.label}`}
+                      onClick={() => toggleRepeatPick(meal.label)}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 10,
+                        padding: "8px 0", cursor: "pointer", userSelect: "none",
+                      }}>
+                      <span style={{
+                        width: 18, height: 18, borderRadius: 5, flexShrink: 0,
+                        border: `1.5px solid ${picked ? T.accent : T.border}`,
+                        background: picked ? T.accent : "transparent",
+                        color: "#fff", fontSize: 12, fontWeight: 700,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                      }}>{picked ? "✓" : ""}</span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 600, fontSize: 14, color: T.text, marginBottom: 2 }}>
+                          {meal.label}
+                        </div>
+                        <div style={{ fontSize: 12, color: T.textSec }}>
+                          <span style={{ color: T.accent, fontWeight: 600 }}>{Math.round(meal.totalCal)} kcal</span>
+                          {" · "}P:{Math.round(meal.totalProtein)}g · C:{Math.round(meal.totalCarbs)}g · F:{Math.round(meal.totalFat)}g
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                <button
+                  onClick={handleRepeatSelected}
+                  disabled={repeatPicked.size === 0 || repeatLogging}
+                  style={{
+                    width: "100%", marginTop: 8,
+                    background: T.accent, color: "#fff", border: "none",
+                    borderRadius: 10, padding: "10px 0",
+                    fontWeight: 700, fontSize: 14, cursor: "pointer",
+                    opacity: repeatPicked.size === 0 || repeatLogging ? 0.5 : 1,
+                  }}>
+                  {repeatLogging
+                    ? "Logging..."
+                    : `+ Log ${repeatPicked.size || ""} ${repeatPicked.size === 1 ? "meal" : "meals"}`.replace("  ", " ")}
+                </button>
+              </div>
+            )}
           </div>
-        ))}
+        )}
 
         {meals.map((meal) => {
           const isOpen = expanded.has(meal.id);

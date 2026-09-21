@@ -1,5 +1,5 @@
 // execution/frontend/src/components/History.jsx
-// Calendar + rich meal log (edit/delete/expand for today, read-only for past)
+// Calendar + rich meal log (edit/delete/expand for today and past dates, read-only for future)
 
 import { useState, useEffect, useMemo } from "react";
 import { collection, addDoc, deleteDoc, doc, onSnapshot, orderBy, query, updateDoc } from "firebase/firestore";
@@ -42,18 +42,17 @@ function toDateKey(d) {
   return new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split("T")[0];
 }
 
-export default function History({ user, goals }) {
+export default function History({ user, goals, selectedDate, onSelectDate }) {
   const { T } = useTheme();
   const [mealLog,      setMealLog]      = useState([]);
   const [weightLog,    setWeightLog]    = useState([]);
   const [loading,      setLoading]      = useState(true);
-  const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMonth,    setViewMonth]    = useState(() => {
     const now = new Date();
     return { year: now.getFullYear(), month: now.getMonth() };
   });
 
-  // Rich meal log state (today only)
+  // Rich meal log state (today and past dates)
   const [calExpanded,  setCalExpanded]  = useState(false);
   const [editingId,    setEditingId]    = useState(null);
   const [editText,     setEditText]     = useState("");
@@ -98,6 +97,7 @@ export default function History({ user, goals }) {
   const todayKey = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split("T")[0];
   const selKey = toDateKey(selectedDate);
   const isToday = selKey === todayKey;
+  const canEdit = selKey <= todayKey; // today or any past date - not future
 
   const datesWithData = useMemo(() => {
     const s = new Set();
@@ -264,7 +264,7 @@ export default function History({ user, goals }) {
               marginBottom: 16, maxHeight: 200, overflowY: "auto",
             }}>
               <div style={{ fontSize: 12, fontWeight: 600, color: T.textSec, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 }}>
-                Today's foods
+                {isToday ? "Today's foods" : "Selected day's foods"}
               </div>
               {dayMeals.flatMap(e => e.items || []).map((it, i) => (
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: T.textSec, padding: "3px 0" }}>
@@ -326,7 +326,7 @@ export default function History({ user, goals }) {
                 const isTod  = dk === todayKey;
                 const hasData = datesWithData.has(dk);
                 return (
-                  <button key={dk} onClick={() => { setSelectedDate(new Date(day)); setCalExpanded(false); }} style={{
+                  <button key={dk} onClick={() => { onSelectDate(new Date(day)); setCalExpanded(false); }} style={{
                     width: "100%", aspectRatio: "1", display: "flex", flexDirection: "column",
                     alignItems: "center", justifyContent: "center", gap: 2,
                     background: isSel ? T.accent : isTod ? T.inputBg : "transparent",
@@ -354,7 +354,7 @@ export default function History({ user, goals }) {
                 const isTod  = dk === todayKey;
                 const hasData = datesWithData.has(dk);
                 return (
-                  <button key={dk} onClick={() => setSelectedDate(new Date(day))} style={{
+                  <button key={dk} onClick={() => onSelectDate(new Date(day))} style={{
                     flex: 1, display: "flex", flexDirection: "column", alignItems: "center",
                     padding: "8px 0", gap: 3,
                     background: isSel ? T.accent : isTod ? T.inputBg : "transparent",
@@ -389,14 +389,14 @@ export default function History({ user, goals }) {
         </div>
       )}
 
-      {/* Meal entries — rich UI for today, read-only for past */}
+      {/* Meal entries — rich UI for today/past, read-only for future */}
       {dayMeals.length > 0 && (
         <div style={card}>
           <span style={labelS}>Meals</span>
           {dayMeals.map((entry, idx) => (
             <div
               key={entry.id || entry.isoTime}
-              draggable={isToday && !!entry.id}
+              draggable={canEdit && !!entry.id}
               onDragStart={e => { e.dataTransfer.effectAllowed = "move"; setDragIdx(idx); }}
               onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; if (dragOverIdx !== idx) setDragOverIdx(idx); }}
               onDrop={e => { e.preventDefault(); if (dragIdx !== null && dragIdx !== idx) handleReorderDrop(dragIdx, idx); setDragIdx(null); setDragOverIdx(null); }}
@@ -415,14 +415,14 @@ export default function History({ user, goals }) {
               {/* Header */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  {isToday && entry.id && (
+                  {canEdit && entry.id && (
                     <span style={{ fontSize: 18, color: T.textSec, cursor: "grab", userSelect: "none", lineHeight: 1, padding: "0 2px" }}>⠿</span>
                   )}
                   <span style={{ fontWeight: 700, fontSize: 16, color: T.text }}>{entry.label}</span>
                 </div>
                 <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
                   <span style={{ fontSize: 12, color: T.textSec }}>{entry.time}</span>
-                  {isToday && entry.id && <>
+                  {canEdit && entry.id && <>
                     <button onClick={() => { setEditingId(entry.id); setEditText((entry.items || []).map(it => `${it.grams}g ${it.name}`).join(", ")); }}
                       style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14 }}>✏️</button>
                     <button onClick={() => handleDelete(entry)}
@@ -514,8 +514,8 @@ export default function History({ user, goals }) {
             </div>
           ))}
 
-          {/* Save as Meal — only shown for today */}
-          {isToday && (
+          {/* Save as Meal — today or any past date */}
+          {canEdit && (
             <button
               onClick={() => { setSaveModalName(""); setShowSaveModal(true); }}
               style={{

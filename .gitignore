@@ -11,3 +11,6 @@ execution/frontend/.env
 execution/backend/serviceAccount.json
 execution/backend/service-account.json
 execution/backend/nin_vectors.json
+*.log
+public/
+.claude/settings.local.json

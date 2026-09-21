@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { collection, addDoc, doc, updateDoc, onSnapshot, query, where } from "firebase/firestore";
+import { collection, addDoc, doc, updateDoc, onSnapshot, query, where, getDocs } from "firebase/firestore";
 import { db, auth } from "../firebase";
 import NINInfo from "./NINInfo";
 import MicroEducation from "./MicroEducation";
@@ -21,6 +21,10 @@ function buildSuggestions(todayLabels) {
   return result;
 }
 
+function toDateKey(d) {
+  return new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split("T")[0];
+}
+
 
 export default function MacroTracker({ user, stats, onCharUpdate, goals: propGoals }) {
   const { T } = useTheme();
@@ -33,6 +37,12 @@ export default function MacroTracker({ user, stats, onCharUpdate, goals: propGoa
   const [showNINInfo, setShowNINInfo] = useState(false);
   const [toast, setToast] = useState(null);
   const [showEdu, setShowEdu] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+
+  const todayKeyStr = toDateKey(new Date());
+  const targetKeyStr = toDateKey(selectedDate);
+  const isFutureDate = targetKeyStr > todayKeyStr;
+  const isTargetToday = targetKeyStr === todayKeyStr;
 
   const goals = propGoals || calcGoals(stats);
 
@@ -64,7 +74,7 @@ useEffect(() => {
   }, [user]);
 
   const handleLog = async () => {
-    if (!foodInput.trim()) return;
+    if (!foodInput.trim() || isFutureDate) return;
     setParsing(true);
     setLocalMsg("");
     try {
@@ -75,15 +85,25 @@ useEffect(() => {
       if (!items.length) { setLocalMsg("Couldn't recognise that food. Try again!"); setParsing(false); return; }
 
       const now = new Date();
-      const localDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split("T")[0];
+      const localDate = targetKeyStr;
 
       // Normalise the new meal name for case-insensitive matching
       const rawName = (mealName || "Meal").trim();
       const newMealName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
       const normalizedNew = newMealName.toLowerCase();
 
-      // Check if a meal with the same normalised name already exists
-      const existingEntry = mealLog.find(e => e.label.trim().toLowerCase() === normalizedNew);
+      // Check if a meal with the same normalised name already exists on the target date.
+      // For today we can use the live `mealLog` listener; for a backdated entry we look it up directly.
+      let existingEntry = null;
+      if (isTargetToday) {
+        existingEntry = mealLog.find(e => e.label.trim().toLowerCase() === normalizedNew);
+      } else if (user) {
+        const q = query(collection(db, "users", user.uid, "food_logs"), where("date", "==", localDate));
+        const snap = await getDocs(q);
+        existingEntry = snap.docs
+          .map(d => ({ id: d.id, ...d.data() }))
+          .find(e => (e.label || "").trim().toLowerCase() === normalizedNew) || null;
+      }
 
       if (existingEntry) {
         // Merge: append new items into the existing meal
@@ -121,13 +141,21 @@ useEffect(() => {
       setFoodInput(""); setMealName("");
 
       const addedCal = items.reduce((sum, item) => sum + (item.cal || 0), 0);
-      setToast(`Logged (+${Math.round(addedCal)} kcal)`);
+      if (isTargetToday) {
+        setToast(`Logged (+${Math.round(addedCal)} kcal)`);
+      } else {
+        const dateLabel = new Date(localDate + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+        setToast(`Logged (+${Math.round(addedCal)} kcal) to ${dateLabel}`);
+      }
       setTimeout(() => setToast(null), 2500);
 
       // One-time micro-education moment
       if (!localStorage.getItem("khaaya-edu-shown")) {
         setTimeout(() => setShowEdu(true), 800);
       }
+
+      // Coach feedback + character progress only make sense against today's running totals
+      if (!isTargetToday) { setParsing(false); return; }
 
       const newTotals = { ...totals };
       items.forEach(m => { newTotals.cal += m.cal; newTotals.protein += m.protein; newTotals.carbs += m.carbs; newTotals.fat += m.fat; });
@@ -159,15 +187,27 @@ useEffect(() => {
       )}
 
       {/* History calendar + stats slot + meals */}
-      <History user={user} goals={goals} />
+      <History user={user} goals={goals} selectedDate={selectedDate} onSelectDate={setSelectedDate} />
 
       {/* Saved Meals */}
-      <SavedMeals user={user} todayLabels={mealLog.map(e => e.label).filter(Boolean)} />
+      <SavedMeals user={user} todayLabels={mealLog.map(e => e.label).filter(Boolean)} selectedDate={selectedDate} />
 
       {/* Log a Meal — at the bottom */}
       <div style={cardS}>
-        <span style={labelS}>Log a Meal</span>
-        <input style={inputS} value={mealName} onChange={e => setMealName(e.target.value)} placeholder="Meal name (e.g. Lunch)" />
+        <span style={labelS}>
+          Log a Meal
+          {!isTargetToday && !isFutureDate && (
+            <span style={{ textTransform: "none", fontWeight: 400, color: T.textSec }}>
+              {" "}— for {new Date(targetKeyStr + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+            </span>
+          )}
+        </span>
+        {isFutureDate && (
+          <div style={{ fontSize: 13, color: T.textSec, marginBottom: 12 }}>
+            Pick today or a past date on the calendar above to log a meal.
+          </div>
+        )}
+        <input style={inputS} value={mealName} onChange={e => setMealName(e.target.value)} placeholder="Meal name (e.g. Lunch)" disabled={isFutureDate} />
         {/* Quick-pick meal name chips */}
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: -6, marginBottom: 12 }}>
           {buildSuggestions(mealLog.map(e => e.label).filter(Boolean)).map(s => (
@@ -185,13 +225,14 @@ useEffect(() => {
           value={foodInput}
           onChange={e => setFoodInput(e.target.value)}
           placeholder="e.g. 2 eggs, 1 toast, chai"
+          disabled={isFutureDate}
         />
         <div style={{ fontSize: 12, color: T.textSec, marginBottom: 12 }}>Powered by AI · Log meals in any language</div>
         {localMsg && <div style={{ fontSize: 13, color: "#FF3B30", marginBottom: 10 }}>{localMsg}</div>}
         <button
-          style={{ width: "100%", background: T.btnPrimary, color: T.card, border: "none", borderRadius: 14, padding: 16, fontWeight: 700, fontSize: 17, cursor: "pointer" }}
+          style={{ width: "100%", background: T.btnPrimary, color: T.card, border: "none", borderRadius: 14, padding: 16, fontWeight: 700, fontSize: 17, cursor: "pointer", opacity: parsing || isFutureDate ? 0.5 : 1 }}
           onClick={handleLog}
-          disabled={parsing}
+          disabled={parsing || isFutureDate}
         >
           {parsing ? "LOGGING..." : "LOG IT"}
         </button>
