@@ -46,7 +46,16 @@ export default function App() {
   }, []); // apply saved theme on first mount
 
   // ── AI goals fetch ────────────────────────────────────────────────────────
-  const fetchAiGoals = async (s) => {
+  // The goal calculator is an AI call, so identical stats do not produce identical
+  // numbers. Fetching on every load therefore made the daily target drift between
+  // sessions. We store the result with a fingerprint of the stats that produced it
+  // and only re-ask when one of those stats actually changes.
+  const goalInputsKey = (s) => s ? JSON.stringify([
+    s.age, s.weight, s.height, s.bf, s.sex, s.goal,
+    s.activityDescription || "", s.targetDate || null, s.targetWeight || null,
+  ]) : "";
+
+  const fetchAiGoals = async (s, uid) => {
     if (!s) return;
     setAiGoals(null); // Show 'Calculating...' state immediately
     try {
@@ -65,6 +74,15 @@ export default function App() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setAiGoals(data);
+
+      const ownerUid = uid || auth.currentUser?.uid;
+      if (ownerUid) {
+        await setDoc(
+          doc(db, "users", ownerUid, "profile", "data"),
+          { aiGoals: data, aiGoalsKey: goalInputsKey(s) },
+          { merge: true },
+        );
+      }
     } catch (e) {
       console.error("AI goals fetch failed:", e.message);
     }
@@ -87,7 +105,13 @@ export default function App() {
             const data = snap.data();
             setStats(data.stats);
             setAppearance(data.appearance);
-            if (!data.stats?.customCal) fetchAiGoals(data.stats);
+            if (!data.stats?.customCal) {
+              if (data.aiGoals?.cal && data.aiGoalsKey === goalInputsKey(data.stats)) {
+                setAiGoals(data.aiGoals); // stats unchanged - keep the existing target
+              } else {
+                fetchAiGoals(data.stats, firebaseUser.uid);
+              }
+            }
             setScreen("app");
           } else {
             setScreen("onboard");
@@ -110,7 +134,8 @@ export default function App() {
     setAppearance(newAppearance);
     try {
       const ref = doc(db, "users", user.uid, "profile", "data");
-      await setDoc(ref, { stats: newStats, appearance: newAppearance });
+      // merge so an unrelated save (e.g. renaming) keeps the stored aiGoals
+      await setDoc(ref, { stats: newStats, appearance: newAppearance }, { merge: true });
     } catch (err) {
       console.error("Firestore profile save failed:", err.message);
     }
