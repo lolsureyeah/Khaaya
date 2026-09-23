@@ -1,5 +1,5 @@
 # Khaaya
-## South Asian Nutrition Tracker
+## Nutrition Tracker built for South Asian Food 
 
 ---
 
