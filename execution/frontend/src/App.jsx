@@ -199,8 +199,6 @@ export default function App() {
     setScreen("login");
   };
 
-  const triggerCharAnim = () => {};
-
   // ── Goals priority merge ──────────────────────────────────────────────────
   // Always compute local goals first so timeline fields (weightGap, weeksToGoal,
   // rawDelta, isCapped, realisticWeeks) are always present regardless of which
@@ -293,7 +291,6 @@ export default function App() {
                 <MacroTracker
                   user={user}
                   stats={stats}
-                  onCharUpdate={triggerCharAnim}
                   goals={goals}
                 />
               </div>

@@ -114,9 +114,11 @@ export default function SavedMeals({ user, todayLabels = [], selectedDate }) {
     return unsub;
   }, [user]);
 
-  // Live-subscribe to the meals logged the day before the selected day, grouped by the
-  // standard meal types. onSnapshot (not a one-time getDocs) so a meal backdated via the
-  // calendar shows up here immediately, without requiring a page reload.
+  // Live-subscribe to every meal logged the day before the selected day, grouped by
+  // label (any name, not just the four default meal types - a custom-named meal like
+  // "Post Workout" is just as repeatable as "Lunch"). onSnapshot (not a one-time
+  // getDocs) so a meal backdated via the calendar shows up here immediately, without
+  // requiring a page reload.
   useEffect(() => {
     if (!user || isFutureSel) { setPrevMeals([]); setPrevLoading(false); return; }
 
@@ -125,18 +127,21 @@ export default function SavedMeals({ user, todayLabels = [], selectedDate }) {
       where("date", "==", prevKey)
     );
     const unsub = onSnapshot(q, (snap) => {
-      const byType = new Map();
+      const byLabel = new Map();
       snap.forEach(d => {
         const data = d.data();
         const rawLabel = (data.label || "").trim();
-        const match = DEFAULT_MEALS.find(m => m.toLowerCase() === rawLabel.toLowerCase());
-        if (!match) return;
-        const existing = byType.get(match) || { label: match, items: [] };
+        if (!rawLabel) return;
+        const key = rawLabel.toLowerCase();
+        // Prefer the default meal type's canonical casing when it matches
+        // (e.g. "lunch" -> "Lunch"); otherwise keep the label as logged.
+        const canonical = DEFAULT_MEALS.find(m => m.toLowerCase() === key) || rawLabel;
+        const existing = byLabel.get(key) || { label: canonical, items: [] };
         existing.items = [...existing.items, ...(data.items || [])];
-        byType.set(match, existing);
+        byLabel.set(key, existing);
       });
 
-      const list = Array.from(byType.values())
+      const list = Array.from(byLabel.values())
         .map(m => ({
           label:        m.label,
           items:        m.items,
@@ -145,7 +150,14 @@ export default function SavedMeals({ user, todayLabels = [], selectedDate }) {
           totalCarbs:   m.items.reduce((s, i) => s + (i.carbs   || 0), 0),
           totalFat:     m.items.reduce((s, i) => s + (i.fat     || 0), 0),
         }))
-        .sort((a, b) => DEFAULT_MEALS.indexOf(a.label) - DEFAULT_MEALS.indexOf(b.label));
+        // Default meal types first in their usual order, then custom names alphabetically
+        .sort((a, b) => {
+          const ai = DEFAULT_MEALS.indexOf(a.label), bi = DEFAULT_MEALS.indexOf(b.label);
+          if (ai !== -1 && bi !== -1) return ai - bi;
+          if (ai !== -1) return -1;
+          if (bi !== -1) return 1;
+          return a.label.localeCompare(b.label);
+        });
 
       setPrevMeals(list);
       setPrevLoading(false);

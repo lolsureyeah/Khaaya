@@ -28,7 +28,7 @@ function toDateKey(d) {
 }
 
 
-export default function MacroTracker({ user, stats, onCharUpdate, goals: propGoals }) {
+export default function MacroTracker({ user, stats, goals: propGoals }) {
   const { T } = useTheme();
   const [meals, setMeals] = useState([]);
   const [mealLog, setMealLog] = useState([]);
@@ -199,31 +199,7 @@ useEffect(() => {
         setTimeout(() => setShowEdu(true), 800);
       }
 
-      // The meal is saved at this point, so release the form now. The coach comment
-      // is cosmetic and the request is slow (several seconds against a cold backend);
-      // awaiting it here left LOG IT disabled long after the meal was visibly logged.
       setParsing(false);
-
-      // Coach feedback + character progress only make sense against today's running totals
-      if (!isTargetToday) return;
-
-      const newTotals = { ...totals };
-      items.forEach(m => { newTotals.cal += m.cal; newTotals.protein += m.protein; newTotals.carbs += m.carbs; newTotals.fat += m.fat; });
-
-      // Progress comes from numbers we already have, so update the character first
-      // and let the comment land whenever the coach responds.
-      const progress = Math.min(100, (newTotals.cal / goals.cal) * 100);
-      onCharUpdate("", progress);
-
-      try {
-        const coachToken = await auth.currentUser.getIdToken();
-        const cr = await fetch(apiUrl("/api/coach"), { method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${coachToken}` }, body: JSON.stringify({ meals: items, totals: newTotals, goals, stats }) });
-        const cd = await cr.json();
-        onCharUpdate(cd.comment || "Great fuel!", progress);
-      } catch (err) {
-        // A missing coach line must never look like a failed log
-        console.error("Coach comment failed:", err.message);
-      }
     } catch (e) {
       setLocalMsg("Error parsing food.");
       setParsing(false);
