@@ -64,7 +64,6 @@ app.use(cors({ origin: [
   "http://localhost:5173",
   "https://khaaya.web.app",          // current hosting domain
   "https://khaaya.firebaseapp.com",  // Firebase's second default domain for the same site
-  "https://fuelos-ee85d.web.app",    // legacy domain, kept until the old project is retired
 ] }));
 app.use(express.json());
 

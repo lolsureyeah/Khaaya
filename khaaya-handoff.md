@@ -6,7 +6,7 @@
 - GitHub: https://github.com/lolsureyeah/LogYourMeal
 - Frontend: `execution/frontend/` (React + Vite)
 - Backend: `execution/backend/` (Node.js + Express)
-- Database: Firebase Firestore (project: fuelos-ee85d, region: asia-south1)
+- Database: Firebase Firestore (project: khaaya, region: asia-south1)
 - Auth: Firebase Authentication (email + Google)
 - AI Parser: Gemini 2.0 Flash Lite
 - AI Embeddings: Gemini Embedding 001
@@ -21,10 +21,10 @@
 
 ## Deployment plan
 - Backend → Railway (persistent Node.js, keeps `nin_vectors.json` in memory)
-- Frontend → Firebase Hosting (fuelos-ee85d.web.app)
+- Frontend → Firebase Hosting (khaaya.web.app)
 
 ## Deployment status so far
-- Security audit done: rate limiting added to `/api/parse-food`, `/api/coach`, `/api/calculate-goals`; CORS origin fixed to `https://fuelos-ee85d.web.app`; Firestore rules published (`allow read, write: if request.auth != null && request.auth.uid == userId`); npm audit fixed (3 high severity path-to-regexp issues resolved, 8 low severity remain in firebase-admin chain — left alone, force-fix would be a breaking change)
+- Security audit done: rate limiting added to `/api/parse-food`, `/api/coach`, `/api/calculate-goals`; CORS origin fixed to `https://khaaya.web.app`; Firestore rules published (`allow read, write: if request.auth != null && request.auth.uid == userId`); npm audit fixed (3 high severity path-to-regexp issues resolved, 8 low severity remain in firebase-admin chain — left alone, force-fix would be a breaking change)
 - Pushed to GitHub, Railway deploy attempted
 - Railway root directory set to `execution/backend`
 - Railway deployment **crashed** — error: `No Gemini API keys found. Set GEMINI_API_KEY_1/2/3 in .env` — environment variables were never added in Railway's Variables tab
