@@ -14,7 +14,7 @@ const require = createRequire(import.meta.url);
 import rateLimit from "express-rate-limit";
 import { applyNINVerification, buildNINVectorStore } from "./ninMatcher.js";
 import { checkCommunityCache, saveToCommunityCache } from "./communityFoodsCache.js";
-import { geminiKeyedUrl, rotateGeminiKey } from "./geminiKeyRotator.js";
+import { geminiUrl, geminiHeaders, rotateGeminiKey } from "./geminiKeyRotator.js";
 
 // Load Firebase service account from file if provided, else fall back to applicationDefault
 let credential;
@@ -75,8 +75,8 @@ async function callGemini(prompt, temperature = 0.3) {
   });
 
   const doRequest = () => fetch(
-    geminiKeyedUrl("v1beta/models/gemini-2.5-flash:generateContent"),
-    { method: "POST", headers: { "Content-Type": "application/json" }, body }
+    geminiUrl("v1beta/models/gemini-2.5-flash:generateContent"),
+    { method: "POST", headers: geminiHeaders(), body }
   );
 
   let res = await doRequest();

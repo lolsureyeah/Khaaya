@@ -27,6 +27,16 @@ export function rotateGeminiKey() {
   return KEYS[currentIndex];
 }
 
+// Preferred: key travels in a header so it never lands in URLs/logs.
+export function geminiUrl(modelPath) {
+  return `https://generativelanguage.googleapis.com/${modelPath}`;
+}
+
+export function geminiHeaders() {
+  return { "Content-Type": "application/json", "x-goog-api-key": getGeminiKey() };
+}
+
+// Deprecated: puts the key in the query string. Still used by ninMatcher.js.
 export function geminiKeyedUrl(modelPath) {
   return `https://generativelanguage.googleapis.com/${modelPath}?key=${getGeminiKey()}`;
 }

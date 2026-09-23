@@ -14,3 +14,5 @@ execution/backend/nin_vectors.json
 *.log
 public/
 .claude/settings.local.json
+*.txt
+api-out*

@@ -1,6 +1,6 @@
 // execution/backend/communityFoodsCache.js
 import { cosineSimilarity } from "./ninMatcher.js";
-import { geminiKeyedUrl, rotateGeminiKey } from "./geminiKeyRotator.js";
+import { geminiUrl, geminiHeaders, rotateGeminiKey } from "./geminiKeyRotator.js";
 import admin from "firebase-admin";
 
 async function embedText(text) {
@@ -10,8 +10,8 @@ async function embedText(text) {
   });
 
   const doRequest = () => fetch(
-    geminiKeyedUrl("v1beta/models/gemini-embedding-001:embedContent"),
-    { method: "POST", headers: { "Content-Type": "application/json" }, body }
+    geminiUrl("v1beta/models/gemini-embedding-001:embedContent"),
+    { method: "POST", headers: geminiHeaders(), body }
   );
 
   let res = await doRequest();
