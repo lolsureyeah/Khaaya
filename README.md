@@ -1,17 +1,18 @@
 # Khaaya
-## Nutrition Tracker built for South Asian Food 
+## Nutrition Tracker built for South Asian Food
 
 ---
 
 ## WHAT THIS IS
 Khaaya is a nutrition tracker built around South Asian food and eating patterns:
-- AI-powered food parser (Gemini 2.0 Flash Lite) — understands natural language meal descriptions in any language
+- AI-powered food parser (Gemini 2.5 Flash) — understands natural language meal descriptions in any language
 - NIN (National Institute of Nutrition) verified food database for Indian food accuracy, with community-cached AI estimates as fallback
 - Voice input for meal logging
 - Quick-repeat: re-log yesterday's meals by type in one tap
-- AI Coach — conversational, generates a Workout Day and Rest Day meal plan (with pre/post-workout meals) based on user goals, preferences and today's logged intake
+- Saved meals you can re-log in one tap
+- AI goal calculator — daily calorie and macro targets from your stats, goal and timeline
 - Weight + measurements tracker with charts
-- Firebase Auth (email + Google) + Firestore persistence
+- Firebase Auth (email, Google, or guest mode) + Firestore persistence
 - Onboarding wizard shown only on first login
 
 ---
@@ -19,7 +20,7 @@ Khaaya is a nutrition tracker built around South Asian food and eating patterns:
 ## PREREQUISITES
 - Node.js LTS (nodejs.org)
 - Git (git-scm.com)
-- Firebase project (console.firebase.google.com) — project ID: fuelos-ee85d
+- Firebase project (console.firebase.google.com) — project ID: khaaya
 - Gemini API keys (aistudio.google.com) — 3 keys for rotation
 
 ---
@@ -39,7 +40,7 @@ cd Khaaya
 ```
 VITE_FIREBASE_API_KEY=...
 VITE_FIREBASE_AUTH_DOMAIN=...
-VITE_FIREBASE_PROJECT_ID=fuelos-ee85d
+VITE_FIREBASE_PROJECT_ID=khaaya
 VITE_FIREBASE_STORAGE_BUCKET=...
 VITE_FIREBASE_MESSAGING_SENDER_ID=...
 VITE_FIREBASE_APP_ID=...
@@ -54,7 +55,7 @@ GEMINI_API_KEY_3=...
 PORT=3001
 ```
 
-For local dev, `execution/backend/serviceAccount.json` (Firebase Admin SDK key) is loaded directly.
+For local dev, `execution/backend/serviceAccount.json` (Firebase Admin SDK key for the `khaaya` project) is loaded directly.
 For production, set `FIREBASE_SERVICE_ACCOUNT` as an environment variable containing the full JSON contents — the backend checks this env var first and falls back to the local file.
 
 Neither `.env` nor `serviceAccount.json` should ever be committed.
@@ -93,17 +94,16 @@ Open http://localhost:5173 in your browser.
 
 ---
 
-## STEP 5 — DEPLOY BACKEND (Render)
+## STEP 5 — DEPLOY BACKEND (Railway or Render)
 
-1. render.com → New Web Service → connect `lolsureyeah/Khaaya`
+1. Create a new web service and connect `lolsureyeah/Khaaya`
 2. Root Directory: `execution/backend`
 3. Build Command: `npm install`
 4. Start Command: `npm start`
-5. Instance Type: Free
-6. Environment Variables: `GEMINI_API_KEY_1/2/3`, `FIREBASE_SERVICE_ACCOUNT` (full JSON as one value)
-7. Deploy — copy the live URL (e.g. `khaaya-backend.onrender.com`)
+5. Environment Variables: `GEMINI_API_KEY_1/2/3`, `FIREBASE_SERVICE_ACCOUNT` (full JSON as one value)
+6. Deploy — copy the live URL (e.g. `khaaya-backend.up.railway.app`)
 
-Note: Render free tier spins down after 15 min inactivity, ~30-50s cold start on next request. Fine for pre-launch, upgrade before real launch traffic.
+Note: Render's free tier spins down after 15 min of inactivity (~30-50s cold start on the next request). Fine for pre-launch, upgrade before real launch traffic.
 
 ---
 
@@ -111,7 +111,7 @@ Note: Render free tier spins down after 15 min inactivity, ~30-50s cold start on
 
 Update `execution/frontend/.env`:
 ```
-VITE_API_URL=https://khaaya-backend.onrender.com
+VITE_API_URL=https://<your-backend-url>
 ```
 
 ```bash
@@ -120,13 +120,18 @@ npm run build
 
 cd ../..
 npx firebase-tools login --no-localhost
-npx firebase-tools use fuelos-ee85d
+npx firebase-tools use khaaya
 npx firebase-tools deploy --only hosting
 ```
 
-Live at: https://fuelos-ee85d.web.app
+To deploy Firestore rules:
+```bash
+npx firebase-tools deploy --only firestore:rules
+```
 
-After deploy, add `fuelos-ee85d.web.app` to:
+Live at: https://khaaya.web.app
+
+After deploy, add `khaaya.web.app` to:
 Firebase Console → Authentication → Settings → Authorized domains
 
 Also confirm backend CORS in `execution/backend/index.js` includes this exact domain.
@@ -138,20 +143,22 @@ Also confirm backend CORS in `execution/backend/index.js` includes this exact do
 ```
 Khaaya/
 ├── README.md
+├── firebase.json / firestore.rules / .firebaserc
 ├── execution/
 │   ├── frontend/          ← React + Vite app
-│   └── backend/           ← Express API (Gemini parsing, AI Coach, auth middleware)
+│   └── backend/           ← Express API (Gemini parsing, goal calculator, saved meals, auth middleware)
 ```
 
 ---
 
-## SECURITY CHECKLIST (done pre-launch)
-- Rate limiting on `/api/parse-food`, `/api/coach`, `/api/calculate-goals`
-- CORS locked to production frontend domain
-- Firestore rules restrict read/write to each user's own `uid`
-- `requireAuth` middleware on all `/api/` routes
-- No secrets committed to git
-- npm audit — high/critical vulnerabilities resolved
+## SECURITY CHECKLIST
+- Rate limiting on `/api/parse-food` and `/api/calculate-goals`
+- CORS locked to production frontend domains
+- Firestore rules restrict `users/{uid}` read/write to that user; `community_foods` is backend-only (no client access)
+- `requireAuth` (Firebase ID token verification) on all `/api/` routes
+- Gemini API key sent in the `x-goog-api-key` header, not the URL
+- No secrets or log files committed to git
+- Run `npm audit` periodically in both `execution/frontend` and `execution/backend`
 
 ---
 
@@ -163,6 +170,6 @@ Khaaya/
 | Firebase auth fails | Check `.env` `VITE_FIREBASE_*` values are correct |
 | Google Sign-In blocked | Add domain to Firebase Auth → Authorized Domains |
 | Deploy blank page | Check `firebase.json` public path = `execution/frontend/dist` |
-| Backend crashes on deploy — "No Gemini API keys found" | Env vars not set on hosting platform (Render/Railway) — add them in dashboard |
+| Backend crashes on deploy — "No Gemini API keys found" | Env vars not set on hosting platform (Railway/Render) — add them in dashboard |
 | Backend crashes — Firebase Admin init fails | Confirm `FIREBASE_SERVICE_ACCOUNT` env var is set with full JSON, or `serviceAccount.json` exists locally |
 | Vite proxy ECONNRESET | Backend not running or wrong port — check `vite.config.js` proxy target matches backend `PORT` |
