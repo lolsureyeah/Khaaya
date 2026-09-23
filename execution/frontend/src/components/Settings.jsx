@@ -185,7 +185,7 @@ export default function Settings({
         <div style={{ marginBottom: 20 }}>
           {user?.isAnonymous && (
             <div style={{ fontSize: 12, color: "#FF3B30", marginBottom: 10, lineHeight: 1.5, textAlign: "center" }}>
-              You're signed in as a guest — signing out loses this data for good unless you save your progress first.
+              You're signed in as a guest. Signing out loses this data for good unless you save your progress first.
             </div>
           )}
           <button style={S.logoutBtn} onClick={onLogout}>Sign Out</button>

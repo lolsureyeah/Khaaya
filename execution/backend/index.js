@@ -60,7 +60,12 @@ async function requireAuth(req, res, next) {
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors({ origin: ["http://localhost:5173", "https://fuelos-ee85d.web.app"] }));
+app.use(cors({ origin: [
+  "http://localhost:5173",
+  "https://khaaya.web.app",          // current hosting domain
+  "https://khaaya.firebaseapp.com",  // Firebase's second default domain for the same site
+  "https://fuelos-ee85d.web.app",    // legacy domain, kept until the old project is retired
+] }));
 app.use(express.json());
 
 async function callGemini(prompt, temperature = 0.3) {

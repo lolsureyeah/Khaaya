@@ -257,24 +257,24 @@ export default function App() {
                     {stats?.name ? `Hey, ${stats.name}` : "Welcome back"}
                   </div>
                 </div>
-                <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   {user?.isAnonymous && (
                     <button onClick={() => setScreen("upgrade")}
-                      style={{ background: T.accent, border: "none", borderRadius: 10, padding: "7px 12px", color: "#fff", cursor: "pointer", fontSize: 13, fontWeight: 700, whiteSpace: "nowrap" }}>
-                      Guest · Save Progress
+                      style={{ background: T.accent, border: "none", borderRadius: 10, height: 36, padding: "0 12px", color: "#fff", cursor: "pointer", fontSize: 13, fontWeight: 700, whiteSpace: "nowrap", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      Sign in to save progress
                     </button>
                   )}
                   <button onClick={() => setScreen("edit_stats")}
-                    style={{ background: T.inputBg, border: "none", borderRadius: 10, padding: "7px 12px", color: T.accent, cursor: "pointer", fontSize: 13, fontWeight: 600, whiteSpace: "nowrap" }}>
+                    style={{ background: T.inputBg, border: "none", borderRadius: 10, height: 36, padding: "0 12px", color: T.accent, cursor: "pointer", fontSize: 13, fontWeight: 600, whiteSpace: "nowrap", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     ✏️ Stats
                   </button>
                   <button onClick={() => setScreen("about")}
-                    style={{ background: T.inputBg, border: "none", borderRadius: 10, width: 36, height: 36, color: T.textSec, cursor: "pointer", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center" }}
+                    style={{ background: T.inputBg, border: "none", borderRadius: 10, width: 36, height: 36, color: T.textSec, cursor: "pointer", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
                     title="About Khaaya">
                     ℹ️
                   </button>
                   <button onClick={() => setScreen("settings")}
-                    style={{ background: T.inputBg, border: "none", borderRadius: 10, width: 36, height: 36, color: T.textSec, cursor: "pointer", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center" }}
+                    style={{ background: T.inputBg, border: "none", borderRadius: 10, width: 36, height: 36, color: T.textSec, cursor: "pointer", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
                     title="Settings">
                     ⚙️
                   </button>

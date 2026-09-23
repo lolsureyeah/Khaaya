@@ -22,7 +22,7 @@ export default function UpgradeAccount({ onClose, onUpgraded }) {
 
   const friendlyError = (e) => {
     if (e.code === "auth/email-already-in-use" || e.code === "auth/credential-already-in-use") {
-      return "That email already has a Khaaya account. Sign out and sign in there instead — this guest data can't be attached to an existing account.";
+      return "That email already has a Khaaya account. Sign out and sign in there instead. This guest data cannot be attached to an existing account.";
     }
     if (e.code === "auth/weak-password") return "Password must be at least 6 characters.";
     if (e.code === "auth/invalid-email") return "Enter a valid email address.";
@@ -90,7 +90,7 @@ export default function UpgradeAccount({ onClose, onUpgraded }) {
             Create a real account
           </h1>
           <div style={{ marginTop: 10, fontSize: 14, color: T.textSec, lineHeight: 1.5 }}>
-            Everything you've logged stays exactly as it is — you're just adding
+            Everything you've logged stays exactly as it is. You're just adding
             a way to sign back in.
           </div>
         </div>
