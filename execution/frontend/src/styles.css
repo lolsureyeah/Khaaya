@@ -86,6 +86,37 @@ button:disabled {
   transform: none;
 }
 
+/* Main app header — greeting + action buttons.
+   Desktop: single row. Mobile: buttons wrap onto their own row below the
+   greeting instead of overflowing past the right edge, and the guest
+   button's label shortens so the row fits at 375px. */
+.app-header-row {
+  flex-wrap: wrap;
+  row-gap: 10px;
+}
+
+.app-header-actions {
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+
+.guest-save-btn__short {
+  display: none;
+}
+
+@media (max-width: 480px) {
+  .app-header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .guest-save-btn__full {
+    display: none;
+  }
+  .guest-save-btn__short {
+    display: inline;
+  }
+}
+
 /* Scrollbar — subtle */
 ::-webkit-scrollbar       { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg); }

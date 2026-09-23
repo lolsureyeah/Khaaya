@@ -250,18 +250,19 @@ export default function App() {
           <div style={{ minHeight: "100vh", background: T.bg, color: T.text, paddingBottom: 60 }}>
             {/* Header */}
             <div style={{ background: T.card, borderBottom: `1px solid ${T.headerBorder}`, padding: "12px 20px" }}>
-              <div style={{ maxWidth: 480, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div>
+              <div className="app-header-row" style={{ maxWidth: 480, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: T.accent }}>Khaaya</div>
                   <div style={{ fontWeight: 800, fontSize: 20, color: T.text, letterSpacing: -0.3, lineHeight: 1.15 }}>
                     {stats?.name ? `Hey, ${stats.name}` : "Welcome back"}
                   </div>
                 </div>
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <div className="app-header-actions" style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   {user?.isAnonymous && (
                     <button onClick={() => setScreen("upgrade")}
                       style={{ background: T.accent, border: "none", borderRadius: 10, height: 36, padding: "0 12px", color: "#fff", cursor: "pointer", fontSize: 13, fontWeight: 700, whiteSpace: "nowrap", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      Sign in to save progress
+                      <span className="guest-save-btn__full">Sign in to save progress</span>
+                      <span className="guest-save-btn__short">Sign in</span>
                     </button>
                   )}
                   <button onClick={() => setScreen("edit_stats")}
