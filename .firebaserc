@@ -1,5 +1,7 @@
 {
   "projects": {
-    "default": "fuelos-ee85d"
+    "default": "fuelos-ee85d",
+    "old": "fuelos-ee85d",
+    "khaaya": "khaaya"
   }
 }

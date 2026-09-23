@@ -14,6 +14,7 @@ export default function Settings({
   onDeleteAccount,
   onClose,
   onOpenLegal,
+  onOpenUpgrade,
 }) {
   const { T } = useTheme();
   const [deleteState, setDeleteState] = useState("idle"); // idle | confirm | deleting | error
@@ -96,6 +97,24 @@ export default function Settings({
       </div>
 
       <div style={S.body}>
+        {/* Guest account prompt */}
+        {user?.isAnonymous && (
+          <div style={{ background: T.accent, borderRadius: 18, padding: "18px 18px", marginBottom: 20 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 6 }}>
+              You're browsing as a guest
+            </div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.85)", marginBottom: 14, lineHeight: 1.5 }}>
+              Your logs live only in this session. Save your progress so you don't lose it.
+            </div>
+            <button
+              onClick={onOpenUpgrade}
+              style={{ background: "#fff", border: "none", borderRadius: 10, padding: "11px 0", width: "100%", color: T.accent, fontWeight: 700, fontSize: 15, cursor: "pointer" }}
+            >
+              Save My Progress
+            </button>
+          </div>
+        )}
+
         {/* Account */}
         <div style={S.section}>
           <div style={S.sectionLabel}>Account</div>
@@ -120,7 +139,7 @@ export default function Settings({
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <div>
                     <div style={S.rowLabel}>{stats?.name || "Your Name"}</div>
-                    <div style={{ fontSize: 13, color: T.textSec, marginTop: 2 }}>{user?.email}</div>
+                    <div style={{ fontSize: 13, color: T.textSec, marginTop: 2 }}>{user?.isAnonymous ? "Guest account" : user?.email}</div>
                   </div>
                   <button onClick={() => { setNameVal(stats?.name || ""); setEditingName(true); }} style={{ background: "none", border: "none", color: T.accent, fontSize: 13, fontWeight: 600, cursor: "pointer", padding: "2px 6px" }}>Edit</button>
                 </div>
@@ -164,6 +183,11 @@ export default function Settings({
 
         {/* Sign Out */}
         <div style={{ marginBottom: 20 }}>
+          {user?.isAnonymous && (
+            <div style={{ fontSize: 12, color: "#FF3B30", marginBottom: 10, lineHeight: 1.5, textAlign: "center" }}>
+              You're signed in as a guest — signing out loses this data for good unless you save your progress first.
+            </div>
+          )}
           <button style={S.logoutBtn} onClick={onLogout}>Sign Out</button>
         </div>
 

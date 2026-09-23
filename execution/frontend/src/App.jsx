@@ -16,6 +16,7 @@ import Customize        from "./components/Customize";
 import MacroTracker  from "./components/MacroTracker";
 import WeightTracker from "./components/WeightTracker";
 import Settings      from "./components/Settings";
+import UpgradeAccount from "./components/UpgradeAccount";
 import AboutKhaaya   from "./components/AboutKhaaya";
 import LegalDocs      from "./components/LegalDocs";
 
@@ -199,6 +200,14 @@ export default function App() {
     setScreen("login");
   };
 
+  // A guest (anonymous) account just gained a real login method via linkWithCredential/
+  // linkWithPopup - same uid, same data, so nothing else needs to change except making
+  // the app aware user.isAnonymous is now false.
+  const handleAccountUpgraded = () => {
+    setUser(auth.currentUser);
+    setScreen("app");
+  };
+
   // ── Goals priority merge ──────────────────────────────────────────────────
   // Always compute local goals first so timeline fields (weightGap, weeksToGoal,
   // rawDelta, isCapped, realisticWeeks) are always present regardless of which
@@ -249,6 +258,12 @@ export default function App() {
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                  {user?.isAnonymous && (
+                    <button onClick={() => setScreen("upgrade")}
+                      style={{ background: T.accent, border: "none", borderRadius: 10, padding: "7px 12px", color: "#fff", cursor: "pointer", fontSize: 13, fontWeight: 700, whiteSpace: "nowrap" }}>
+                      Guest · Save Progress
+                    </button>
+                  )}
                   <button onClick={() => setScreen("edit_stats")}
                     style={{ background: T.inputBg, border: "none", borderRadius: 10, padding: "7px 12px", color: T.accent, cursor: "pointer", fontSize: 13, fontWeight: 600, whiteSpace: "nowrap" }}>
                     ✏️ Stats
@@ -315,7 +330,11 @@ export default function App() {
             onDeleteAccount={handleDeleteAccount}
             onClose={() => setScreen("app")}
             onOpenLegal={() => setScreen("legal")}
+            onOpenUpgrade={() => setScreen("upgrade")}
           />
+        )}
+        {screen === "upgrade" && (
+          <UpgradeAccount onClose={() => setScreen("app")} onUpgraded={handleAccountUpgraded} />
         )}
         {screen === "about" && (
           <AboutKhaaya onClose={() => setScreen("app")} />
