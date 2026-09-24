@@ -10,6 +10,9 @@ import { useTheme } from "../theme";
 import { apiUrl } from "../apiBase";
 import { fiberGoal } from "../utils/calculations";
 
+// Macro grams are stored unrounded, so trim float noise for display.
+const round1 = (n) => Math.round((Number(n) || 0) * 10) / 10;
+
 function Toast({ msg }) {
   if (!msg) return null;
   return (
@@ -506,19 +509,19 @@ export default function History({ user, goals, selectedDate, onSelectDate }) {
                             </div>
                             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                               <span style={{ color: T.textSec }}>Protein</span>
-                              <span style={{ fontWeight: 600, color: "#FF9500" }}>{it.protein}g</span>
+                              <span style={{ fontWeight: 600, color: "#FF9500" }}>{round1(it.protein)}g</span>
                             </div>
                             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                               <span style={{ color: T.textSec }}>Carbs</span>
-                              <span style={{ fontWeight: 600, color: T.accent }}>{it.carbs}g</span>
+                              <span style={{ fontWeight: 600, color: T.accent }}>{round1(it.carbs)}g</span>
                             </div>
                             <div style={{ display: "flex", justifyContent: "space-between" }}>
                               <span style={{ color: T.textSec }}>Fat</span>
-                              <span style={{ fontWeight: 600, color: "#34C759" }}>{it.fat}g</span>
+                              <span style={{ fontWeight: 600, color: "#34C759" }}>{round1(it.fat)}g</span>
                             </div>
                             <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
                               <span style={{ color: T.textSec }}>Fiber</span>
-                              <span style={{ fontWeight: 600, color: "#8D6E63" }}>{it.fiber ?? 0}g</span>
+                              <span style={{ fontWeight: 600, color: "#8D6E63" }}>{round1(it.fiber)}g</span>
                             </div>
                           </div>
                         )}
