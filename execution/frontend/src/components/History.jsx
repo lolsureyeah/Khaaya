@@ -234,9 +234,10 @@ export default function History({ user, goals, selectedDate, onSelectDate }) {
         acc.protein += it.protein || 0;
         acc.carbs   += it.carbs   || 0;
         acc.fat     += it.fat     || 0;
+        acc.fiber   += it.fiber   || 0;
       });
       return acc;
-    }, { cal: 0, protein: 0, carbs: 0, fat: 0 });
+    }, { cal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 });
     Object.keys(t).forEach(k => { t[k] = +t[k].toFixed(1); });
     return t;
   }, [dayMeals]);
@@ -410,6 +411,7 @@ export default function History({ user, goals, selectedDate, onSelectDate }) {
           <MacroBar label="PROTEIN" value={dayTotals.protein} goal={goals.protein} color="#4CAF50" />
           <MacroBar label="CARBS"   value={dayTotals.carbs}   goal={goals.carbs}   color="#2196F3" />
           <MacroBar label="FAT"     value={dayTotals.fat}     goal={goals.fat}     color="#FF9800" />
+          <MacroBar label="FIBER"   value={dayTotals.fiber}   goal={goals.fiber || Math.max(25, Math.round((goals.cal || 2000) / 1000 * 14))} color="#8D6E63" />
         </div>
       )}
 
@@ -513,6 +515,10 @@ export default function History({ user, goals, selectedDate, onSelectDate }) {
                               <span style={{ color: T.textSec }}>Fat</span>
                               <span style={{ fontWeight: 600, color: "#34C759" }}>{it.fat}g</span>
                             </div>
+                            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+                              <span style={{ color: T.textSec }}>Fiber</span>
+                              <span style={{ fontWeight: 600, color: "#8D6E63" }}>{it.fiber ?? 0}g</span>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -523,7 +529,8 @@ export default function History({ user, goals, selectedDate, onSelectDate }) {
                     const mt = (entry.items || []).reduce((acc, it) => ({
                       cal: acc.cal + (it.cal || 0), protein: acc.protein + (it.protein || 0),
                       carbs: acc.carbs + (it.carbs || 0), fat: acc.fat + (it.fat || 0),
-                    }), { cal: 0, protein: 0, carbs: 0, fat: 0 });
+                      fiber: acc.fiber + (it.fiber || 0),
+                    }), { cal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 });
                     return (
                       <div style={{ borderTop: `1px solid ${T.divider}`, marginTop: 8, paddingTop: 8 }}>
                         <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, marginBottom: 6 }}>
@@ -534,6 +541,7 @@ export default function History({ user, goals, selectedDate, onSelectDate }) {
                           <span style={{ color: T.textSec }}>P: <span style={{ fontWeight: 600, color: "#FF9500" }}>{Math.round(mt.protein)}g</span></span>
                           <span style={{ color: T.textSec }}>C: <span style={{ fontWeight: 600, color: T.accent }}>{Math.round(mt.carbs)}g</span></span>
                           <span style={{ color: T.textSec }}>F: <span style={{ fontWeight: 600, color: "#34C759" }}>{Math.round(mt.fat)}g</span></span>
+                          <span style={{ color: T.textSec }}>Fb: <span style={{ fontWeight: 600, color: "#8D6E63" }}>{Math.round(mt.fiber)}g</span></span>
                         </div>
                       </div>
                     );
