@@ -278,6 +278,7 @@ app.post("/api/save-meal", requireAuth, async (req, res) => {
     protein: Number(f.protein) || 0,
     carbs:   Number(f.carbs)   || 0,
     fat:     Number(f.fat)     || 0,
+    fiber:   Number(f.fiber)   || 0,
     source:  sanitiseInput(String(f.source || ""), 50),
   }));
 
@@ -285,12 +286,13 @@ app.post("/api/save-meal", requireAuth, async (req, res) => {
   const totalProtein = sanitisedFoods.reduce((s, f) => s + f.protein, 0);
   const totalCarbs   = sanitisedFoods.reduce((s, f) => s + f.carbs,   0);
   const totalFat     = sanitisedFoods.reduce((s, f) => s + f.fat,     0);
+  const totalFiber   = sanitisedFoods.reduce((s, f) => s + f.fiber,   0);
 
   try {
     const ref = await adminDb
       .collection("users").doc(req.uid)
       .collection("saved_meals")
-      .add({ name, foods: sanitisedFoods, totalCal, totalProtein, totalCarbs, totalFat,
+      .add({ name, foods: sanitisedFoods, totalCal, totalProtein, totalCarbs, totalFat, totalFiber,
              createdAt: admin.firestore.FieldValue.serverTimestamp() });
     res.json({ success: true, mealId: ref.id });
   } catch (err) {
@@ -336,6 +338,7 @@ app.put("/api/saved-meal/:mealId", requireAuth, async (req, res) => {
     protein: Number(f.protein) || 0,
     carbs:   Number(f.carbs)   || 0,
     fat:     Number(f.fat)     || 0,
+    fiber:   Number(f.fiber)   || 0,
     source:  sanitiseInput(String(f.source || ""), 50),
   }));
 
@@ -343,6 +346,7 @@ app.put("/api/saved-meal/:mealId", requireAuth, async (req, res) => {
   const totalProtein = sanitisedFoods.reduce((s, f) => s + f.protein, 0);
   const totalCarbs   = sanitisedFoods.reduce((s, f) => s + f.carbs,   0);
   const totalFat     = sanitisedFoods.reduce((s, f) => s + f.fat,     0);
+  const totalFiber   = sanitisedFoods.reduce((s, f) => s + f.fiber,   0);
 
   try {
     const ref = adminDb
@@ -350,7 +354,7 @@ app.put("/api/saved-meal/:mealId", requireAuth, async (req, res) => {
       .collection("saved_meals").doc(mealId);
     const snap = await ref.get();
     if (!snap.exists) return res.status(404).json({ error: "Meal not found" });
-    await ref.update({ name, foods: sanitisedFoods, totalCal, totalProtein, totalCarbs, totalFat });
+    await ref.update({ name, foods: sanitisedFoods, totalCal, totalProtein, totalCarbs, totalFat, totalFiber });
     res.json({ success: true });
   } catch (err) {
     console.error("update saved-meal error:", err.message);

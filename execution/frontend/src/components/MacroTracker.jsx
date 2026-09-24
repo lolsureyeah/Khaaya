@@ -55,7 +55,8 @@ export default function MacroTracker({ user, stats, goals: propGoals }) {
     protein: acc.protein + (m.protein || 0),
     carbs: acc.carbs + (m.carbs || 0),
     fat: acc.fat + (m.fat || 0),
-  }), { cal: 0, protein: 0, carbs: 0, fat: 0 });
+    fiber: acc.fiber + (m.fiber || 0),
+  }), { cal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 });
 
   Object.keys(totals).forEach(k => totals[k] = +totals[k].toFixed(1));
 useEffect(() => {

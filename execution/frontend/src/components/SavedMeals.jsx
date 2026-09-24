@@ -55,12 +55,13 @@ function withRates(foods) {
     _proteinPer: f.grams > 0 ? f.protein / f.grams : 0,
     _carbsPer:   f.grams > 0 ? f.carbs   / f.grams : 0,
     _fatPer:     f.grams > 0 ? f.fat     / f.grams : 0,
+    _fiberPer:   f.grams > 0 ? (f.fiber || 0) / f.grams : 0,
   }));
 }
 
 // Strip internal rate keys before sending to the server
 function stripRates(foods) {
-  return foods.map(({ _calPer, _proteinPer, _carbsPer, _fatPer, ...rest }) => rest);
+  return foods.map(({ _calPer, _proteinPer, _carbsPer, _fatPer, _fiberPer, ...rest }) => rest);
 }
 
 export default function SavedMeals({ user, todayLabels = [], selectedDate }) {
@@ -149,6 +150,7 @@ export default function SavedMeals({ user, todayLabels = [], selectedDate }) {
           totalProtein: m.items.reduce((s, i) => s + (i.protein || 0), 0),
           totalCarbs:   m.items.reduce((s, i) => s + (i.carbs   || 0), 0),
           totalFat:     m.items.reduce((s, i) => s + (i.fat     || 0), 0),
+          totalFiber:   m.items.reduce((s, i) => s + (i.fiber   || 0), 0),
         }))
         // Default meal types first in their usual order, then custom names alphabetically
         .sort((a, b) => {
@@ -197,6 +199,7 @@ export default function SavedMeals({ user, todayLabels = [], selectedDate }) {
         protein: +( f._proteinPer * newGrams).toFixed(1),
         carbs:   +( f._carbsPer   * newGrams).toFixed(1),
         fat:     +( f._fatPer     * newGrams).toFixed(1),
+        fiber:   +( f._fiberPer   * newGrams).toFixed(1),
       };
     }));
   };
@@ -367,7 +370,8 @@ export default function SavedMeals({ user, todayLabels = [], selectedDate }) {
     protein: acc.protein + (f.protein || 0),
     carbs:   acc.carbs   + (f.carbs   || 0),
     fat:     acc.fat     + (f.fat     || 0),
-  }), { cal: 0, protein: 0, carbs: 0, fat: 0 });
+    fiber:   acc.fiber   + (f.fiber   || 0),
+  }), { cal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 });
 
   const repeatTotalCal = prevMeals.reduce((s, m) => s + m.totalCal, 0);
   const repeatHeading = selKey === todayKey
@@ -427,7 +431,7 @@ export default function SavedMeals({ user, todayLabels = [], selectedDate }) {
                       {f.name}
                     </div>
                     <div style={{ fontSize: 12, color: T.textSec }}>
-                      {Math.round(f.cal)} kcal · P:{Math.round(f.protein)}g · C:{Math.round(f.carbs)}g · F:{Math.round(f.fat)}g
+                      {Math.round(f.cal)} kcal · P:{Math.round(f.protein)}g · C:{Math.round(f.carbs)}g · F:{Math.round(f.fat)}g · Fb:{Math.round(f.fiber || 0)}g
                     </div>
                   </div>
 
@@ -461,6 +465,7 @@ export default function SavedMeals({ user, todayLabels = [], selectedDate }) {
               <span style={{ fontSize: 13, color: T.textSec }}>P: <b style={{ color: "#FF9500" }}>{Math.round(editTotals.protein)}g</b></span>
               <span style={{ fontSize: 13, color: T.textSec }}>C: <b style={{ color: T.accent }}>{Math.round(editTotals.carbs)}g</b></span>
               <span style={{ fontSize: 13, color: T.textSec }}>F: <b style={{ color: "#34C759" }}>{Math.round(editTotals.fat)}g</b></span>
+              <span style={{ fontSize: 13, color: T.textSec }}>Fb: <b style={{ color: "#8D6E63" }}>{Math.round(editTotals.fiber)}g</b></span>
             </div>
 
             {/* Actions */}
@@ -539,7 +544,7 @@ export default function SavedMeals({ user, todayLabels = [], selectedDate }) {
                         </div>
                         <div style={{ fontSize: 12, color: T.textSec }}>
                           <span style={{ color: T.accent, fontWeight: 600 }}>{Math.round(meal.totalCal)} kcal</span>
-                          {" · "}P:{Math.round(meal.totalProtein)}g · C:{Math.round(meal.totalCarbs)}g · F:{Math.round(meal.totalFat)}g
+                          {" · "}P:{Math.round(meal.totalProtein)}g · C:{Math.round(meal.totalCarbs)}g · F:{Math.round(meal.totalFat)}g · Fb:{Math.round(meal.totalFiber || 0)}g
                         </div>
                       </div>
                     </div>
@@ -591,7 +596,7 @@ export default function SavedMeals({ user, todayLabels = [], selectedDate }) {
                 </div>
                 <div style={{ fontSize: 12, color: T.textSec }}>
                   <span style={{ color: T.accent, fontWeight: 600 }}>{Math.round(meal.totalCal)} kcal</span>
-                  {" · "}P:{Math.round(meal.totalProtein)}g · C:{Math.round(meal.totalCarbs)}g · F:{Math.round(meal.totalFat)}g
+                  {" · "}P:{Math.round(meal.totalProtein)}g · C:{Math.round(meal.totalCarbs)}g · F:{Math.round(meal.totalFat)}g · Fb:{Math.round(meal.totalFiber || 0)}g
                 </div>
               </div>
 

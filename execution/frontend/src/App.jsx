@@ -6,7 +6,7 @@ import { onAuthStateChanged, signOut, deleteUser } from "firebase/auth";
 import { doc, getDoc, setDoc, deleteDoc } from "firebase/firestore";
 import { auth, db } from "./firebase";
 import { ThemeContext, light, dark } from "./theme";
-import { calcGoals } from "./utils/calculations";
+import { calcGoals, fiberGoal } from "./utils/calculations";
 import { apiUrl } from "./apiBase";
 
 import Login            from "./components/Login";
@@ -222,6 +222,8 @@ export default function App() {
     } else {
       goals = localGoals;
     }
+    // Fibre isn't user-set or AI-set, so derive it from whichever calorie goal won.
+    goals.fiber = fiberGoal(goals.cal);
   }
 
   // ── Loading ────────────────────────────────────────────────────────────────

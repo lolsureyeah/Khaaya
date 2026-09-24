@@ -24,6 +24,12 @@ export function activityMultiplier(desc) {
   return 1.55; // default: assume moderate if anything is mentioned
 }
 
+// Dietary fibre target: the standard 14g per 1000 kcal, with a 25g floor so
+// low-calorie cuts still aim for a sensible amount.
+export function fiberGoal(cal) {
+  return Math.max(25, Math.round((parseFloat(cal) || 2000) / 1000 * 14));
+}
+
 export function calcGoals(stats) {
   const w = parseFloat(stats?.weight) || 75;
   const h = parseFloat(stats?.height) || 175;
@@ -81,9 +87,10 @@ export function calcGoals(stats) {
   const protein = Math.round(lbm * 2.2);
   const fat  = Math.round(finalCal * 0.25 / 9);
   const carbs = Math.max(50, Math.round((finalCal - protein * 4 - fat * 9) / 4));
-  
-  return { 
-    cal: finalCal, protein, fat, carbs, tdee,
+  const fiber = fiberGoal(finalCal);
+
+  return {
+    cal: finalCal, protein, fat, carbs, fiber, tdee,
     weeksToGoal,
     weightGap: Math.abs(weightGap),
     isCapped,

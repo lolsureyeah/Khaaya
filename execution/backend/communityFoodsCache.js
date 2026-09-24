@@ -52,6 +52,7 @@ export async function checkCommunityCache(foodName, requestedGrams, adminDb) {
         protein: (bestData.protein / 100) * requestedGrams,
         carbs:   (bestData.carbs   / 100) * requestedGrams,
         fat:     (bestData.fat     / 100) * requestedGrams,
+        fiber:   ((bestData.fiber ?? 0) / 100) * requestedGrams,
       };
     }
     return null;
@@ -102,6 +103,7 @@ export async function saveToCommunityCache(parsedItem, uid, adminDb) {
       protein: (parsedItem.protein / g) * 100,
       carbs:   (parsedItem.carbs   / g) * 100,
       fat:     (parsedItem.fat     / g) * 100,
+      fiber:   ((parsedItem.fiber ?? 0) / g) * 100,
       embedding,
       contributedBy: uid,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),

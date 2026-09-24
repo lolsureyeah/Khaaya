@@ -8,6 +8,7 @@ import NINInfo from "./NINInfo";
 import MacroBar from "./MacroBar";
 import { useTheme } from "../theme";
 import { apiUrl } from "../apiBase";
+import { fiberGoal } from "../utils/calculations";
 
 function Toast({ msg }) {
   if (!msg) return null;
@@ -411,7 +412,7 @@ export default function History({ user, goals, selectedDate, onSelectDate }) {
           <MacroBar label="PROTEIN" value={dayTotals.protein} goal={goals.protein} color="#4CAF50" />
           <MacroBar label="CARBS"   value={dayTotals.carbs}   goal={goals.carbs}   color="#2196F3" />
           <MacroBar label="FAT"     value={dayTotals.fat}     goal={goals.fat}     color="#FF9800" />
-          <MacroBar label="FIBER"   value={dayTotals.fiber}   goal={goals.fiber || Math.max(25, Math.round((goals.cal || 2000) / 1000 * 14))} color="#8D6E63" />
+          <MacroBar label="FIBER"   value={dayTotals.fiber}   goal={goals.fiber || fiberGoal(goals.cal)} color="#8D6E63" />
         </div>
       )}
 
