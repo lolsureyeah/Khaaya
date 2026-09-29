@@ -46,10 +46,45 @@ function toDateKey(d) {
   return new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split("T")[0];
 }
 
-// Avoid a redundant "(Ng)" suffix when the original phrase already states the weight (e.g. "200g Poha")
+// The parser returns the food name and the quantity phrase separately ("Poha" + "2 cups"),
+// so both are needed for a readable row.
+const gramsOf = (it) => {
+  const g = Number(it.grams);
+  return Number.isFinite(g) && g > 0 ? g : null;
+};
+
+// True when the quantity phrase already names the food ("half carrot"), so we don't say it twice
+function qtyNamesFood(qty, name) {
+  if (!qty || !name) return false;
+  const q = qty.toLowerCase();
+  return name.toLowerCase().split(/\s+/).filter(Boolean).every(w => w.length > 2 && q.includes(w));
+}
+
+// Avoid a redundant "(Ng)" suffix when the phrase already states the weight (e.g. "200g Poha", "100gm")
+function formatQty(qty, grams) {
+  if (grams == null) return qty;
+  if (/\d\s*(kgs?|kilos?|g|gm|gms|grams?|ml|l|litres?|liters?)\b/i.test(qty)) return qty;
+  return `${qty} (${grams}g)`;
+}
+
 function formatItem(it) {
-  if (it.originalQty && !/\d\s*g\b/i.test(it.originalQty)) return `${it.originalQty} (${it.grams}g)`;
-  return it.originalQty || `${it.grams}g ${it.name}`;
+  const name  = (it.name || "").trim();
+  const qty   = (it.originalQty || "").trim();
+  const grams = gramsOf(it);
+  if (!qty)  return name ? (grams != null ? `${name} (${grams}g)` : name) : (grams != null ? `${grams}g` : "");
+  if (!name || qtyNamesFood(qty, name)) return formatQty(qty, grams);
+  return `${name} · ${formatQty(qty, grams)}`;
+}
+
+// Text form used to prefill the edit box — must re-parse back into the same food
+function itemToText(it) {
+  const name  = (it.name || "").trim();
+  const qty   = (it.originalQty || "").trim();
+  const grams = gramsOf(it);
+  if (qty && (!name || qtyNamesFood(qty, name))) return qty;
+  if (qty && name) return `${qty} ${name}`;
+  if (name) return grams != null ? `${grams}g ${name}` : name;
+  return grams != null ? `${grams}g` : "";
 }
 
 export default function History({ user, goals, selectedDate, onSelectDate }) {
@@ -456,7 +491,7 @@ export default function History({ user, goals, selectedDate, onSelectDate }) {
                     <button onClick={() => {
                       setEditingId(entry.id);
                       setEditLabel(entry.label || "");
-                      setEditText((entry.items || []).map(it => it.originalQty || `${it.grams}g ${it.name}`).join(", "));
+                      setEditText((entry.items || []).map(itemToText).filter(Boolean).join(", "));
                     }}
                       style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14 }}>✏️</button>
                     <button onClick={() => handleDelete(entry)}
