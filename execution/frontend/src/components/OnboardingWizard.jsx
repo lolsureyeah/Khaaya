@@ -8,17 +8,14 @@ import { calcGoals } from "../utils/calculations";
 
 const FEATURE_CARDS = [
   {
-    icon: "🤖",
     title: "Auto Meal Logging",
     desc: "Just type what you ate in plain English. Our AI figures out the rest.",
   },
   {
-    icon: "📊",
     title: "Macro Tracking",
     desc: "See your calories, protein, carbs and fat update in real time.",
   },
   {
-    icon: "⚖️",
     title: "Weight & Goals",
     desc: "Log your weight, set a target, and track your progress over time.",
   },
@@ -230,7 +227,6 @@ export default function OnboardingWizard({ onComplete }) {
               padding: "16px 18px", border: `1px solid ${T.border}`,
               display: "flex", gap: 14, alignItems: "flex-start",
             }}>
-              <div style={{ fontSize: 28, lineHeight: 1, flexShrink: 0 }}>{card.icon}</div>
               <div>
                 <div style={{ fontWeight: 700, fontSize: 16, color: T.text, marginBottom: 4 }}>
                   {card.title}
@@ -366,7 +362,7 @@ export default function OnboardingWizard({ onComplete }) {
         <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
           {GOALS.map(g => (
             <button key={g.v} style={S.chip(form.goal === g.v)} onClick={() => set("goal", g.v)}>
-              {g.v === "cut" ? "Cut 🔪" : g.v === "maintain" ? "Maintain ⚖️" : "Bulk 📈"}
+              {g.l}
             </button>
           ))}
         </div>

@@ -3,11 +3,12 @@
 
 import { useState } from "react";
 import { useTheme } from "../theme";
+import { Sun, Moon } from "./Icons";
 
 const SKIN_TONES   = [{ v: "#FDDBB4", l: "Light" }, { v: "#F5C5A3", l: "Fair" }, { v: "#E8A87C", l: "Medium" }, { v: "#C68642", l: "Tan" }, { v: "#8D5524", l: "Brown" }, { v: "#4A2912", l: "Deep" }];
-const HAIR_COLORS  = [{ v: "#1a1a1a", l: "Black" }, { v: "#3D2B1F", l: "Dark Brown" }, { v: "#7B4F2E", l: "Brown" }, { v: "#C8A165", l: "Blonde" }, { v: "#B5451B", l: "Auburn" }, { v: "#e2e8f0", l: "White" }, { v: "#E63946", l: "Red" }, { v: "#6366f1", l: "Purple" }];
+const HAIR_COLORS  = [{ v: "#1a1a1a", l: "Black" }, { v: "#3D2B1F", l: "Dark Brown" }, { v: "#7B4F2E", l: "Brown" }, { v: "#C8A165", l: "Blonde" }, { v: "#B5451B", l: "Auburn" }, { v: "#e2e8f0", l: "White" }, { v: "#E63946", l: "Red" }, { v: "#6366f1", l: "Purple" }]; // unslop-ignore: avatar palette options
 const HAIR_STYLES  = [{ v: "short", l: "Short" }, { v: "long", l: "Long" }, { v: "curly", l: "Curly" }, { v: "ponytail", l: "Ponytail" }, { v: "buzz", l: "Buzz" }, { v: "bald", l: "Bald" }];
-const SHIRT_COLORS = [{ v: "#6366f1", l: "Purple" }, { v: "#3b82f6", l: "Blue" }, { v: "#10b981", l: "Green" }, { v: "#ef4444", l: "Red" }, { v: "#f59e0b", l: "Yellow" }, { v: "#ec4899", l: "Pink" }, { v: "#374151", l: "Grey" }, { v: "#e2e8f0", l: "White" }];
+const SHIRT_COLORS = [{ v: "#6366f1", l: "Purple" }, { v: "#3b82f6", l: "Blue" }, { v: "#10b981", l: "Green" }, { v: "#ef4444", l: "Red" }, { v: "#f59e0b", l: "Yellow" }, { v: "#ec4899", l: "Pink" }, { v: "#374151", l: "Grey" }, { v: "#e2e8f0", l: "White" }]; // unslop-ignore: avatar palette options
 const PANTS_COLORS = [{ v: "#1e293b", l: "Navy" }, { v: "#1e40af", l: "Denim" }, { v: "#14532d", l: "Green" }, { v: "#374151", l: "Grey" }, { v: "#111", l: "Black" }, { v: "#7c2d12", l: "Rust" }];
 
 function ColorDots({ label, value, onChange, options, T }) {
@@ -70,9 +71,9 @@ export default function Customize({ stats, initialAppearance, onComplete }) {
           </div>
           <button onClick={toggle} style={{
             background: T.inputBg, border: "none", borderRadius: 10,
-            padding: "8px 12px", fontSize: 16, cursor: "pointer",
+            padding: "8px 12px", color: T.text, display: "flex", cursor: "pointer",
           }}>
-            {isDark ? "☀️" : "🌙"}
+            {isDark ? <Sun /> : <Moon />}
           </button>
         </div>
       </div>

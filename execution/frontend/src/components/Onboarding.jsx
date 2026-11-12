@@ -217,7 +217,7 @@ export default function Onboarding({ initialStats, onComplete, onCancel }) {
 
         <label style={S.label}>Goal</label>
         <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-          {[{ v: "cut", l: "Cut 🔪" }, { v: "maintain", l: "Maintain ⚖️" }, { v: "bulk", l: "Bulk 📈" }].map(g => (
+          {[{ v: "cut", l: "Cut" }, { v: "maintain", l: "Maintain" }, { v: "bulk", l: "Bulk" }].map(g => (
             <button key={g.v} style={S.chip(stats.goal === g.v)} onClick={() => set("goal", g.v)}>{g.l}</button>
           ))}
         </div>

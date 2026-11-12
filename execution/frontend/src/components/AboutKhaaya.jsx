@@ -1,5 +1,5 @@
 // execution/frontend/src/components/AboutKhaaya.jsx
-// Full-screen info overlay accessed via the ℹ️ button in the header.
+// Full-screen info overlay accessed via the info button in the header.
 // Explains what Khaaya is, its data source, and key differentiators.
 
 import { useTheme } from "../theme";
@@ -9,17 +9,14 @@ export default function AboutKhaaya({ onClose }) {
 
   const features = [
     {
-      icon: "⚡",
       title: "Log meals instantly",
       desc: "Type what you ate in any language. Khaaya figures out the calories and macros for you.",
     },
     {
-      icon: "🎯",
       title: "Goals that fit your body",
       desc: "Personalised targets based on your stats, activity level, and goal timeline.",
     },
     {
-      icon: "🍛",
       title: "Roti isn't bread. Dal isn't soup.",
       desc: "Backed by Indian government nutrition data, not estimates based on food equivalence, so what you log actually matches what you eat.",
     },
@@ -125,14 +122,6 @@ export default function AboutKhaaya({ onClose }) {
         <div style={S.card}>
           {features.map((f, i) => (
             <div key={i} style={S.row(i)}>
-              <span style={{
-                fontSize: 20, flexShrink: 0,
-                width: 40, height: 40, borderRadius: 12,
-                background: T.inputBg,
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}>
-                {f.icon}
-              </span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 15, fontWeight: 700, color: T.text, marginBottom: 4 }}>
                   {f.title}

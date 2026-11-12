@@ -7,6 +7,7 @@ import { db, auth } from "../firebase";
 import NINInfo from "./NINInfo";
 import MacroBar from "./MacroBar";
 import { useTheme } from "../theme";
+import { Pencil } from "./Icons";
 import { apiUrl } from "../apiBase";
 import { fiberGoal } from "../utils/calculations";
 
@@ -458,7 +459,7 @@ export default function History({ user, goals, selectedDate, onSelectDate }) {
                       setEditLabel(entry.label || "");
                       setEditText((entry.items || []).map(it => it.originalQty || `${it.grams}g ${it.name}`).join(", "));
                     }}
-                      style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14 }}>✏️</button>
+                      style={{ background: "none", border: "none", cursor: "pointer", color: T.textSec, display: "flex" }}><Pencil width={16} height={16} /></button>
                     <button onClick={() => handleDelete(entry)}
                       style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14 }}>🗑️</button>
                   </>}

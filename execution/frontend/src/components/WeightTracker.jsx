@@ -5,6 +5,7 @@ import { useState, useEffect, useMemo } from "react";
 import { collection, addDoc, deleteDoc, doc, onSnapshot, orderBy, query, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { useTheme } from "../theme";
+import { Trash } from "./Icons";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -285,7 +286,7 @@ export default function WeightTracker({ user, stats }) {
               {(() => {
                 if (!latest) return "No entries yet";
                 const gap = Math.abs(latest - targetW);
-                if (gap < 0.05) return "Goal reached 🎉";
+                if (gap < 0.05) return "Goal reached";
                 const isBulk = targetW > startW;
                 const rate = isBulk ? 0.3 : 0.5;
                 const weeks = Math.max(1, Math.round(gap / rate));
@@ -311,8 +312,8 @@ export default function WeightTracker({ user, stats }) {
                 </button>
               )}
               <button onClick={() => handleDelete(selectedEntry)}
-                style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, color: T.textSec, padding: "4px 8px" }}>
-                🗑️
+                style={{ background: "none", border: "none", cursor: "pointer", color: T.textSec, padding: "4px 8px", display: "flex" }}>
+                <Trash />
               </button>
             </div>
           </div>
@@ -467,9 +468,9 @@ export default function WeightTracker({ user, stats }) {
               </div>
               <button
                 onClick={() => handleDelete(e)}
-                style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, color: T.textSec, padding: "4px 8px" }}
+                style={{ background: "none", border: "none", cursor: "pointer", color: T.textSec, padding: "4px 8px", display: "flex" }}
               >
-                🗑️
+                <Trash />
               </button>
             </div>
           ))}

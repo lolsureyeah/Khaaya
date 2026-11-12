@@ -3,6 +3,7 @@
 // Uses localStorage key "khaaya-edu-shown" so it only fires once, ever.
 
 import { useTheme } from "../theme";
+import { Check } from "./Icons";
 
 export default function MicroEducation({ onDismiss }) {
   const { T } = useTheme();
@@ -38,10 +39,10 @@ export default function MicroEducation({ onDismiss }) {
           width: 36, height: 36, borderRadius: 12,
           background: T.inputBg,
           display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 17, margin: "8px auto 18px",
+          color: T.success, margin: "8px auto 18px",
           opacity: 0.7,
         }}>
-          ✅
+          <Check width={18} height={18} />
         </div>
 
         {/* Message */}

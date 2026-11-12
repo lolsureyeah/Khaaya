@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { collection, addDoc, deleteDoc, doc, getDocs, onSnapshot, orderBy, query, updateDoc, where } from "firebase/firestore";
 import { db, auth } from "../firebase";
 import { useTheme } from "../theme";
+import { Pencil } from "./Icons";
 import { apiUrl } from "../apiBase";
 
 const DEFAULT_MEALS = ["Breakfast", "Lunch", "Dinner", "Snacks"];
@@ -603,7 +604,7 @@ export default function SavedMeals({ user, todayLabels = [], selectedDate }) {
               {/* Actions */}
               <div style={{ display: "flex", gap: 4, alignItems: "center", flexShrink: 0 }} onClick={e => e.stopPropagation()}>
                 <button onClick={() => openEdit(meal)}
-                  style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, color: T.textSec, padding: "2px 4px" }}>✏️</button>
+                  style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, color: T.textSec, padding: "2px 4px", display: "flex" }}><Pencil width={16} height={16} /></button>
                 <button onClick={() => handleDelete(meal)} disabled={!!deleting}
                   style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, color: T.textSec, padding: "2px 4px" }}>🗑️</button>
                 <button onClick={() => openLogPrompt(meal)}

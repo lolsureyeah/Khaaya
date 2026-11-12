@@ -19,6 +19,7 @@ import Settings      from "./components/Settings";
 import UpgradeAccount from "./components/UpgradeAccount";
 import AboutKhaaya   from "./components/AboutKhaaya";
 import LegalDocs      from "./components/LegalDocs";
+import { Info, Sliders, Pencil } from "./components/Icons";
 
 const TABS = ["Log", "Weight"];
 
@@ -269,17 +270,17 @@ export default function App() {
                   )}
                   <button onClick={() => setScreen("edit_stats")}
                     style={{ background: T.inputBg, border: "none", borderRadius: 10, height: 36, padding: "0 12px", color: T.accent, cursor: "pointer", fontSize: 13, fontWeight: 600, whiteSpace: "nowrap", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    ✏️ Stats
+                    <Pencil width={15} height={15} style={{ marginRight: 6 }} /> Stats
                   </button>
                   <button onClick={() => setScreen("about")}
                     style={{ background: T.inputBg, border: "none", borderRadius: 10, width: 36, height: 36, color: T.textSec, cursor: "pointer", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
                     title="About Khaaya">
-                    ℹ️
+                    <Info />
                   </button>
                   <button onClick={() => setScreen("settings")}
                     style={{ background: T.inputBg, border: "none", borderRadius: 10, width: 36, height: 36, color: T.textSec, cursor: "pointer", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
                     title="Settings">
-                    ⚙️
+                    <Sliders />
                   </button>
                 </div>
               </div>

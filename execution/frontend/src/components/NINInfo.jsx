@@ -2,6 +2,7 @@
 // Modal info sheet explaining what NIN-certified nutrition data means
 
 import { useTheme } from "../theme";
+import { Shield } from "./Icons";
 
 export default function NINInfo({ onClose }) {
   const { T } = useTheme();
@@ -56,9 +57,9 @@ export default function NINInfo({ onClose }) {
             width: 64, height: 64, borderRadius: 18,
             background: "rgba(52,199,89,0.15)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 32, margin: "0 auto 14px",
+            color: T.success, margin: "0 auto 14px",
           }}>
-            🏛️
+            <Shield width={32} height={32} />
           </div>
           <div style={{ fontSize: 22, fontWeight: 800, color: T.text, marginBottom: 6 }}>
             NIN Certified
@@ -93,7 +94,6 @@ export default function NINInfo({ onClose }) {
         {/* Why it matters */}
         <div style={{ ...cardS, background: "rgba(52,199,89,0.08)", border: "1px solid rgba(52,199,89,0.2)" }}>
           <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-            <span style={{ fontSize: 22, flexShrink: 0 }}>💡</span>
             <div>
               <div style={{ fontSize: 14, fontWeight: 700, color: T.text, marginBottom: 4 }}>
                 Why this matters for South Asian diets
